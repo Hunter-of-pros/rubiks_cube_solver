@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
+#include <stdexcept>
 
 namespace rubik {
 
@@ -51,14 +52,16 @@ constexpr int kFound = -1;
 constexpr int kNodeLimitHit = -2;
 constexpr int kInfinity = std::numeric_limits<int>::max();
 
+template <typename HeuristicFn>
 int dfsIdaStar(const CubieCube& state,
                int g,
                int bound,
                int prevFace,
                uint64_t maxNodes,
                uint64_t& nodesExpanded,
-               std::vector<Move>& path) {
-    const int h = baselineHeuristic(state);
+               std::vector<Move>& path,
+               const HeuristicFn& heuristicFn) {
+    const int h = heuristicFn(state);
     const int f = g + h;
     if (f > bound) {
         return f;
@@ -84,7 +87,8 @@ int dfsIdaStar(const CubieCube& state,
         const CubieCube next = state.multiply(moveTable[m]);
         path.push_back(static_cast<Move>(m));
 
-        const int res = dfsIdaStar(next, g + 1, bound, currFace, maxNodes, nodesExpanded, path);
+        const int res = dfsIdaStar(
+            next, g + 1, bound, currFace, maxNodes, nodesExpanded, path, heuristicFn);
         if (res == kFound || res == kNodeLimitHit) {
             return res;
         }
@@ -98,9 +102,11 @@ int dfsIdaStar(const CubieCube& state,
     return minExcess;
 }
 
-}  // namespace
-
-SolveResult solveWithIdaStarBaseline(const Cube& cube, const SolveOptions& options) {
+template <typename HeuristicFn>
+SolveResult runIdaStar(const Cube& cube,
+                       const SolveOptions& options,
+                       size_t extraMemoryBytes,
+                       const HeuristicFn& heuristicFn) {
     SolveResult result;
 
     const ValidationResult validation = validateCube(cube);
@@ -114,18 +120,18 @@ SolveResult solveWithIdaStarBaseline(const Cube& cube, const SolveOptions& optio
 
     if (root.isSolved()) {
         result.solved = true;
-        result.metrics.memoryBytes = sizeof(CubieCube) * 2;
+        result.metrics.memoryBytes = sizeof(CubieCube) * 2 + extraMemoryBytes;
         return result;
     }
 
-    int bound = baselineHeuristic(root);
+    int bound = heuristicFn(root);
     std::vector<Move> path;
     path.reserve(static_cast<size_t>(std::max(1, options.maxDepth)));
 
     while (bound <= options.maxDepth) {
         path.clear();
         const int res = dfsIdaStar(
-            root, 0, bound, -1, options.maxNodes, result.metrics.nodesExpanded, path);
+            root, 0, bound, -1, options.maxNodes, result.metrics.nodesExpanded, path, heuristicFn);
 
         if (res == kFound) {
             const auto end = std::chrono::steady_clock::now();
@@ -135,6 +141,7 @@ SolveResult solveWithIdaStarBaseline(const Cube& cube, const SolveOptions& optio
             result.metrics.elapsedMs =
                 std::chrono::duration<double, std::milli>(end - start).count();
             result.metrics.memoryBytes =
+                extraMemoryBytes +
                 sizeof(CubieCube) * (result.moves.size() + 2) +
                 sizeof(Move) * result.moves.capacity() +
                 sizeof(CubieCube) * kMoveCount;
@@ -156,11 +163,36 @@ SolveResult solveWithIdaStarBaseline(const Cube& cube, const SolveOptions& optio
     const auto end = std::chrono::steady_clock::now();
     result.metrics.elapsedMs =
         std::chrono::duration<double, std::milli>(end - start).count();
-    result.metrics.memoryBytes = sizeof(CubieCube) * kMoveCount;
+    result.metrics.memoryBytes = extraMemoryBytes + sizeof(CubieCube) * kMoveCount;
     if (result.error.empty()) {
         result.error = "No solution found within maxDepth=" + std::to_string(options.maxDepth);
     }
     return result;
+}
+
+}  // namespace
+
+SolveResult solveWithIdaStarBaseline(const Cube& cube, const SolveOptions& options) {
+    return runIdaStar(cube, options, 0, baselineHeuristic);
+}
+
+SolveResult solveWithIdaStarPdb(const Cube& cube,
+                                const PdbHeuristic& heuristic,
+                                const SolveOptions& options) {
+    if (!heuristic.isBuilt()) {
+        throw std::runtime_error("PdbHeuristic must be built before calling solveWithIdaStarPdb");
+    }
+    return runIdaStar(cube, options, heuristic.memoryBytes(),
+                      [&heuristic](const CubieCube& state) { return heuristic.evaluate(state); });
+}
+
+SolveResult solveWithIdaStarPdb(const Cube& cube, const SolveOptions& options) {
+    static PdbHeuristic sharedPdb = [] {
+        PdbHeuristic pdb;
+        pdb.build();
+        return pdb;
+    }();
+    return solveWithIdaStarPdb(cube, sharedPdb, options);
 }
 
 }  // namespace rubik
