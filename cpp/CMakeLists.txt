@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(rubik_engine
     src/cube.cpp
+    src/move.cpp
 )
 
 target_include_directories(rubik_engine PUBLIC

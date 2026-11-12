@@ -7,6 +7,8 @@
 
 namespace rubik {
 
+enum class Move : uint8_t;
+
 // Standard cube colors in URFDLB solved-face order.
 enum class Color : uint8_t {
     White = 0,   // U
@@ -62,10 +64,15 @@ public:
     // Formats the cube as a readable 2D unfolded cross (U above L F R B above D).
     std::string toNetString() const;
 
+    // Applies a single move or a whitespace-separated sequence of moves.
+    void apply(Move move);
+    void apply(std::string_view sequence);
+
     bool operator==(const Cube& other) const noexcept = default;
 
 private:
     static int globalIndex(Face face, int localIndex);
+    void rotateQuarterTurnCW(Face face) noexcept;
 
     std::array<Color, kTotalStickers> stickers_{};
 };
