@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Sequence, Tuple
+from typing import Dict, List, Mapping, Protocol, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -71,12 +71,17 @@ def detect_cube_quad(frame: np.ndarray) -> Tuple[int, int, int] | None:
     return best_box
 
 
+class ColorPredictor(Protocol):
+    def predict_one(self, feat: StickerFeatures) -> Tuple[str, float]: ...
+
+
 def analyze_face_frame(
     frame: np.ndarray,
     box_fraction: float = 0.48,
     use_contour: bool = False,
+    classifier: ColorPredictor | None = None,
 ) -> FaceDetectionResult:
-    """Extracts 9 sticker ROIs and classifies their colors via the HSV baseline."""
+    """Extracts 9 sticker ROIs and classifies their colors (HSV baseline by default)."""
     if frame is None or frame.ndim != 3:
         raise ValueError("Expected an HxWxC BGR image")
 
@@ -93,7 +98,10 @@ def analyze_face_frame(
     for x1, y1, x2, y2 in rois:
         patch = frame[y1:y2, x1:x2]
         feat = extract_sticker_features(patch)
-        color, conf = classify_hsv(feat)
+        if classifier is not None:
+            color, conf = classifier.predict_one(feat)
+        else:
+            color, conf = classify_hsv(feat)
         features_list.append(feat)
         colors.append(color)
         confidences.append(conf)
@@ -123,3 +131,4 @@ def reconstruct_cube_state(faces: Mapping[str, Sequence[str] | str]) -> str:
                 raise ValueError(f"Invalid sticker color '{ch}' on face '{code}'")
         parts.append(face_str)
     return "".join(parts)
+

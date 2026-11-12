@@ -51,6 +51,8 @@ data/
 *.jpg
 *.jpeg
 *.png
+!experiments/**/*.png
+!experiments/*/*.png
 *.mp4
 *.pkl
 *.joblib

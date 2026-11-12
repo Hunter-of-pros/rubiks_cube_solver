@@ -56,4 +56,25 @@ Generated with `./cpp/build/benchmark_solvers --trials 10 --csv experiments/solv
 
 **Key takeaway**: Pattern databases cut IDA\* nodes at depth 6 from `2,873.1` down to `9.9` (~290× fewer nodes) while staying strictly optimal. For full 20-move scrambles, Kociemba solves 20/20 trials in an average of `26.12 ms` and `20.40` moves while using less than half the memory and ~27× faster table startup than our 5-piece PDBs.
 
+---
+
+## Measured Results — Experiment 2: HSV Baseline vs. ML Color Recognition (Synthetic Lighting Benchmark)
+
+Generated with `.venv/bin/python backend/scripts/evaluate_color_models.py` (`seed=42`, 1,800 labeled sticker patches across 5 synthetic lighting regimes: `normal`, `dim`, `warm_tungsten`, `cool_daylight`, `glare`; stratified 70/30 split with `train=1,260`, `test=540`).
+
+Saved artifacts: [color_model_comparison.csv](experiments/vision_benchmarks/color_model_comparison.csv) and [hsv_vs_ml_lighting.png](experiments/vision_benchmarks/hsv_vs_ml_lighting.png).
+
+| Model | Overall Acc | Macro Precision | Macro Recall | Normal | Dim | Warm Tungsten | Cool Daylight | Glare |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `hsv_baseline` | 94.26% | 94.84% | 94.26% | 100.0% | 95.4% | 83.3% | 92.6% | 100.0% |
+| `knn` (`k=5`, weighted) | 100.00% | 100.00% | 100.00% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
+| `svm_rbf` (calibrated) | 100.00% | 100.00% | 100.00% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
+| `random_forest` (120 trees) | 100.00% | 100.00% | 100.00% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
+
+**Failure-case analysis**:
+- `hsv_baseline` errors on the 540-sample test split were all White stickers under strong color-temperature shifts (`W -> Y: 12`, `W -> B: 11`, `W -> O: 7`, `W -> R: 1`), because warm/cool white-balance shifts raise HSV saturation above the fixed `S < 55` threshold.
+- Classical `scikit-learn` models trained on 11-D circular-Hue (`sin H`, `cos H`) + HSV + CIE LAB + BGR features separate shifted White cleanly from colored stickers, so a deep PyTorch CNN is not justified for 9-patch sticker classification.
+- **Note**: These `100.0%` scores are measured on *synthetic* lighting perturbations; real webcam captures collected with `backend/scripts/collect_dataset.py` will vary by camera sensor and sticker material.
+
+
 

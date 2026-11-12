@@ -16,6 +16,7 @@ if str(BACKEND_DIR) not in sys.path:
 from app.cv.camera import CameraCapture, NATURAL_SCAN_ORDER, draw_scan_overlay
 from app.cv.colors import VALID_COLORS
 from app.cv.detector import analyze_face_frame, reconstruct_cube_state
+from app.ml.classifier import StickerColorClassifier
 from app.services.solver_bridge import solve_facelets
 
 
@@ -35,7 +36,17 @@ def main() -> int:
     parser.add_argument("--camera", type=int, default=0, help="Camera index (default: 0)")
     parser.add_argument("--stable-frames", type=int, default=12, help="Frames required for auto-capture")
     parser.add_argument("--algo", default="kociemba", choices=["kociemba", "ida-pdb", "ida-base"])
+    parser.add_argument(
+        "--model",
+        type=Path,
+        default=None,
+        help="Optional trained .joblib ML color classifier (uses HSV baseline if omitted)",
+    )
     args = parser.parse_args()
+
+    classifier = StickerColorClassifier.load(args.model) if args.model else None
+    if classifier is not None:
+        print(f"Loaded ML color classifier ({classifier.model_name}) from {args.model}")
 
     scanned: Dict[str, str] = {}
     idx = 0
@@ -46,7 +57,7 @@ def main() -> int:
         while idx < len(NATURAL_SCAN_ORDER):
             frame = cam.read_frame()
             prompt = NATURAL_SCAN_ORDER[idx]
-            detection = analyze_face_frame(frame)
+            detection = analyze_face_frame(frame, classifier=classifier)
             face_str = detection.face_string
 
             if face_str == last_face_str and detection.min_confidence >= 0.50:
@@ -112,3 +123,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
