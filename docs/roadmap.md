@@ -25,12 +25,13 @@
 - `cpp/tests/test_solver_baseline.cpp` & `cpp/tests/test_solver_pdb.cpp`: Baseline vs. PDB admissibility and speedup verification up to 10-move scrambles.
 - `cpp/include/rubik/kociemba.hpp`, `cpp/src/kociemba.cpp` & `cpp/tests/test_solver_kociemba.cpp`: Kociemba Two-Phase coordinate tables, pruning tables, anytime solver, Superflip and 50x 20-move scramble tests.
 - `cpp/src/main_cli.cpp` & `cpp/src/benchmark_solvers.cpp`: `rubik_solver` JSON/text CLI executable and `benchmark_solvers` CSV harness (`experiments/solver_benchmarks/solver_comparison.csv`).
+- `backend/app/cv/camera.py`, `backend/scripts/capture_faces.py` & `backend/tests/test_camera.py`: OpenCV webcam capture wrapper, `URFDLB` scan-order prompts, 3×3 alignment grid & inner sticker ROI geometry.
 
 ## Pending Tasks (Next Up)
 
-1. Set up Python environment (`.venv`, OpenCV, NumPy, FastAPI, pytest) (`feature/camera-capture`).
-2. Build OpenCV webcam capture + 3×3 face/sticker grid detector (`feature/sticker-detection`).
-3. Implement HSV baseline color classifier and 6-face state reconstruction.
+1. Build sticker feature extraction + HSV baseline color classifier (`feature/sticker-detection`).
+2. Reconstruct all 6 faces into a 54-char state and validate with `rubik_solver`.
+3. Collect labeled sticker images across varied lighting and compare HSV vs. ML models (Phase 5).
 
 ## Testing Checklist
 
