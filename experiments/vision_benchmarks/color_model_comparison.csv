@@ -1,0 +1,5 @@
+model,overall_accuracy,macro_precision,macro_recall,acc_normal,acc_dim,acc_warm_tungsten,acc_cool_daylight,acc_glare
+hsv_baseline,0.9426,0.9484,0.9426,1.0000,0.9537,0.8333,0.9259,1.0000
+knn,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000
+svm_rbf,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000
+random_forest,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000,1.0000
