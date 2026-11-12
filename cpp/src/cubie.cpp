@@ -217,6 +217,51 @@ bool CubieCube::isSolved() const noexcept {
     return true;
 }
 
+CubieCube CubieCube::identity() noexcept {
+    CubieCube c;
+    for (uint8_t i = 0; i < 8; ++i) {
+        c.cp[i] = i;
+        c.co[i] = 0;
+    }
+    for (uint8_t i = 0; i < 12; ++i) {
+        c.ep[i] = i;
+        c.eo[i] = 0;
+    }
+    return c;
+}
+
+const std::array<CubieCube, kMoveCount>& CubieCube::moveTable() {
+    static const std::array<CubieCube, kMoveCount> kTable = [] {
+        std::array<CubieCube, kMoveCount> table{};
+        for (int m = 0; m < kMoveCount; ++m) {
+            Cube faceletCube;
+            faceletCube.apply(static_cast<Move>(m));
+            table[m] = toCubieCube(faceletCube);
+        }
+        return table;
+    }();
+    return kTable;
+}
+
+CubieCube CubieCube::multiply(const CubieCube& other) const noexcept {
+    CubieCube out;
+    for (int i = 0; i < 8; ++i) {
+        const uint8_t src = other.cp[i];
+        out.cp[i] = cp[src];
+        out.co[i] = static_cast<uint8_t>((co[src] + other.co[i]) % 3);
+    }
+    for (int i = 0; i < 12; ++i) {
+        const uint8_t src = other.ep[i];
+        out.ep[i] = ep[src];
+        out.eo[i] = static_cast<uint8_t>(eo[src] ^ other.eo[i]);
+    }
+    return out;
+}
+
+void CubieCube::apply(Move move) {
+    *this = multiply(moveTable()[static_cast<size_t>(move)]);
+}
+
 ValidationResult validateCube(const Cube& cube) {
     CubieCube unused;
     return parseAndValidate(cube, unused);

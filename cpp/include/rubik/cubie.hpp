@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rubik/cube.hpp"
+#include "rubik/move.hpp"
 
 #include <array>
 #include <cstdint>
@@ -23,6 +24,13 @@ struct CubieCube {
 
     bool isSolved() const noexcept;
     bool operator==(const CubieCube& other) const noexcept = default;
+
+    static CubieCube identity() noexcept;
+    static const std::array<CubieCube, kMoveCount>& moveTable();
+
+    // Composes `this` state followed by `other`: result = this * other.
+    CubieCube multiply(const CubieCube& other) const noexcept;
+    void apply(Move move);
 };
 
 enum class ValidationError {
