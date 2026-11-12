@@ -5,6 +5,7 @@ All notable progress in `rubiks_cube_solver` is tracked here as milestones are c
 ## [Unreleased]
 
 ### Added
+- Phase 6A FastAPI REST API (`backend/app/main.py`, `backend/app/api/routes.py`), `--validate-only` and `facelets` output in `rubik_solver`, expanded `solver_bridge.py`, and FastAPI `TestClient` integration tests (`test_api.py`).
 - Phase 5 ML color classification (`backend/app/ml/dataset.py`, `backend/app/ml/classifier.py`), interactive `collect_dataset.py`, `evaluate_color_models.py` comparing HSV vs. k-NN/SVM/Random Forest across lighting regimes, `hsv_vs_ml_lighting.png` plot, and `test_ml_classifier.py`.
 - Phase 4B sticker feature extraction (`colors.py`), glare filtering, HSV baseline classifier, contour fallback (`detector.py`), C++ `solver_bridge.py`, live auto-capture webcam scanner (`scan_live.py`) with mirrored preview and neighbor bars, and `test_vision_pipeline.py`.
 - Phase 4A Python `.venv` setup (`opencv-python`, `numpy`, `pytest`), `CameraCapture`, 3×3 alignment grid and ROI geometry (`backend/app/cv/camera.py`), interactive `capture_faces.py`, and `test_camera.py`.

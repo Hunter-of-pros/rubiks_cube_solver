@@ -21,7 +21,7 @@ std::string jsonEscape(const std::string& input) {
 
 void printUsage() {
     std::cerr << "Usage: rubik_solver [--facelets <54-char> | --scramble \"<moves>\"] "
-                 "[--algo kociemba|ida-pdb|ida-base] [--json]\n";
+                 "[--algo kociemba|ida-pdb|ida-base] [--validate-only] [--json]\n";
 }
 
 }  // namespace
@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
     std::string scramble;
     std::string algo = "kociemba";
     bool jsonOutput = false;
+    bool validateOnly = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -40,6 +41,8 @@ int main(int argc, char** argv) {
             scramble = argv[++i];
         } else if (arg == "--algo" && i + 1 < argc) {
             algo = argv[++i];
+        } else if (arg == "--validate-only") {
+            validateOnly = true;
         } else if (arg == "--json") {
             jsonOutput = true;
         } else {
@@ -67,6 +70,8 @@ int main(int argc, char** argv) {
         if (!validation.valid) {
             result.solved = false;
             result.error = validation.message;
+        } else if (validateOnly) {
+            result.solved = cube.isSolved();
         } else if (algo == "kociemba") {
             result = rubik::solveWithKociemba(cube);
         } else if (algo == "ida-pdb") {
@@ -83,6 +88,7 @@ int main(int argc, char** argv) {
             std::cout << "{"
                       << "\"valid\":" << (validation.valid ? "true" : "false") << ","
                       << "\"solved\":" << (result.solved ? "true" : "false") << ","
+                      << "\"facelets\":\"" << jsonEscape(cube.toFaceletString()) << "\","
                       << "\"algorithm\":\"" << jsonEscape(algo) << "\","
                       << "\"moves\":\"" << jsonEscape(movesStr) << "\","
                       << "\"solution_length\":" << result.metrics.solutionLength << ","
@@ -92,9 +98,13 @@ int main(int argc, char** argv) {
                       << "\"error\":\"" << jsonEscape(result.error) << "\""
                       << "}\n";
         } else {
-            if (!validation.valid || !result.solved) {
+            if (!validation.valid || (!validateOnly && !result.solved)) {
                 std::cerr << "Failed: " << result.error << '\n';
                 return 1;
+            }
+            if (validateOnly) {
+                std::cout << "Valid cube state: " << cube.toFaceletString() << '\n';
+                return 0;
             }
             std::cout << "Algorithm: " << algo << '\n'
                       << "Solution (" << result.metrics.solutionLength << " moves): "
@@ -104,7 +114,7 @@ int main(int argc, char** argv) {
                       << " | Memory: " << result.metrics.memoryBytes << " bytes\n";
         }
 
-        return result.solved ? 0 : 2;
+        return (validation.valid && (validateOnly || result.solved)) ? 0 : 2;
     } catch (const std::exception& ex) {
         if (jsonOutput) {
             std::cout << "{\"valid\":false,\"solved\":false,\"error\":\""
