@@ -16,6 +16,7 @@ add_library(rubik_engine
     src/scrambler.cpp
     src/pattern_db.cpp
     src/ida_star.cpp
+    src/kociemba.cpp
 )
 
 target_include_directories(rubik_engine PUBLIC
@@ -67,3 +68,29 @@ target_compile_options(test_solver_pdb PRIVATE
 )
 
 add_test(NAME solver_pdb_tests COMMAND test_solver_pdb)
+
+add_executable(test_solver_kociemba
+    tests/test_solver_kociemba.cpp
+)
+target_link_libraries(test_solver_kociemba PRIVATE rubik_engine)
+target_compile_options(test_solver_kociemba PRIVATE
+    -Wall -Wextra -Wpedantic
+)
+
+add_test(NAME solver_kociemba_tests COMMAND test_solver_kociemba)
+
+add_executable(rubik_solver
+    src/main_cli.cpp
+)
+target_link_libraries(rubik_solver PRIVATE rubik_engine)
+target_compile_options(rubik_solver PRIVATE
+    -Wall -Wextra -Wpedantic
+)
+
+add_executable(benchmark_solvers
+    src/benchmark_solvers.cpp
+)
+target_link_libraries(benchmark_solvers PRIVATE rubik_engine)
+target_compile_options(benchmark_solvers PRIVATE
+    -Wall -Wextra -Wpedantic
+)
