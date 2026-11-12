@@ -1,0 +1,4 @@
+opencv-python>=5.0.0
+numpy>=2.5.0
+pytest>=9.0.0
+

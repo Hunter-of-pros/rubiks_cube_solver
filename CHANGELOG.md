@@ -5,6 +5,7 @@ All notable progress in `rubiks_cube_solver` is tracked here as milestones are c
 ## [Unreleased]
 
 ### Added
+- Phase 4A Python `.venv` setup (`opencv-python`, `numpy`, `pytest`), `CameraCapture`, 3×3 alignment grid and ROI geometry (`backend/app/cv/camera.py`), interactive `capture_faces.py`, and `test_camera.py`.
 - Phase 3C Kociemba Two-Phase solver (`KociembaTables`, `KociembaSolver`, `solveWithKociemba`), `rubik_solver` JSON CLI, `benchmark_solvers` CSV benchmark tool, and `test_solver_kociemba`.
 - Measured solver benchmark comparison saved to `experiments/solver_benchmarks/solver_comparison.csv` and documented in `docs/experiments.md`.
 - Phase 3B Pattern Databases (`PatternDatabase`, `PdbHeuristic`) using Lehmer-code ranking and BFS precomputation, plus `solveWithIdaStarPdb` and `test_solver_pdb`.
