@@ -23,6 +23,12 @@ struct SolveOptions {
     uint64_t maxNodes = 0;  // 0 means unlimited
 };
 
+struct KociembaOptions {
+    int maxLength = 24;
+    int targetLength = 20;
+    double timeBudgetMs = 50.0;
+};
+
 struct SolveResult {
     bool solved = false;
     std::vector<Move> moves;
@@ -39,6 +45,9 @@ SolveResult solveWithIdaStarPdb(const Cube& cube,
                                 const PdbHeuristic& heuristic,
                                 const SolveOptions& options = {});
 SolveResult solveWithIdaStarPdb(const Cube& cube, const SolveOptions& options = {});
+
+// Near-optimal fast solver using Kociemba's Two-Phase Algorithm.
+SolveResult solveWithKociemba(const Cube& cube, const KociembaOptions& options = {});
 
 }  // namespace rubik
 
