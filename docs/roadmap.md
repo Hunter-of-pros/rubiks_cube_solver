@@ -20,13 +20,14 @@
 - `cpp/include/rubik/scrambler.hpp` & `cpp/src/scrambler.cpp`: Seeded random scrambler avoiding redundant same-face and opposite-axis moves.
 - `cpp/include/rubik/cubie.hpp` & `cpp/src/cubie.cpp`: `CubieCube` conversion and full physical solvability validator (`validateCube`).
 - `cpp/tests/test_engine.cpp`: Scrambler reversibility tests and validation checks for color counts, centers, impossible pieces, duplicate cubies, and twist/flip/permutation parity.
-- `cpp/include/rubik/solver.hpp` & `cpp/src/ida_star.cpp` (plus `CubieCube::multiply` in `cubie.cpp`): Fast cubie-level move multiplication and baseline IDA* solver (`solveWithIdaStarBaseline`) with node/time/memory metrics.
-- `cpp/tests/test_solver_baseline.cpp`: Verification that cubie multiplication matches facelet rotations over 300 moves, optimal baseline IDA* solves for shallow scrambles, and node-budget/validation guards.
+- `cpp/include/rubik/solver.hpp` & `cpp/src/ida_star.cpp` (plus `CubieCube::multiply` in `cubie.cpp`): Fast cubie-level move multiplication and IDA* solvers (`solveWithIdaStarBaseline`, `solveWithIdaStarPdb`) with node/time/memory metrics.
+- `cpp/include/rubik/pattern_db.hpp` & `cpp/src/pattern_db.cpp`: Mixed-radix Lehmer ranking and BFS-built corner/edge Pattern Databases (`PatternDatabase`, `PdbHeuristic`).
+- `cpp/tests/test_solver_baseline.cpp` & `cpp/tests/test_solver_pdb.cpp`: Baseline vs. PDB admissibility and speedup verification up to 10-move scrambles.
 
 ## Pending Tasks (Next Up)
 
-1. Build Pattern Databases (8-corner PDB + edge subset PDBs) for IDA* (`feature/ida-star-pdb`).
-2. Implement Kociemba's two-phase solver (`feature/kociemba-solver`) and a benchmark CLI comparing IDA* vs. Kociemba.
+1. Implement Kociemba's two-phase solver (`feature/kociemba-solver`) to solve arbitrary 20-move scrambles in milliseconds.
+2. Build the C++ solver CLI executable + benchmark harness comparing baseline IDA*, PDB IDA*, and Kociemba.
 
 ## Testing Checklist
 

@@ -2,6 +2,7 @@
 
 #include "rubik/cube.hpp"
 #include "rubik/move.hpp"
+#include "rubik/pattern_db.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,4 +34,11 @@ struct SolveResult {
 // (no pattern databases yet). Best for shallow scrambles and benchmarking.
 SolveResult solveWithIdaStarBaseline(const Cube& cube, const SolveOptions& options = {});
 
+// Optimal IDA* solver guided by corner and edge Pattern Databases.
+SolveResult solveWithIdaStarPdb(const Cube& cube,
+                                const PdbHeuristic& heuristic,
+                                const SolveOptions& options = {});
+SolveResult solveWithIdaStarPdb(const Cube& cube, const SolveOptions& options = {});
+
 }  // namespace rubik
+

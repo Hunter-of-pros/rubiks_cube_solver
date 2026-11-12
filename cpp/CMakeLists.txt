@@ -5,11 +5,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 add_library(rubik_engine
     src/cube.cpp
     src/move.cpp
     src/cubie.cpp
     src/scrambler.cpp
+    src/pattern_db.cpp
     src/ida_star.cpp
 )
 
@@ -52,3 +57,13 @@ target_compile_options(test_solver_baseline PRIVATE
 )
 
 add_test(NAME solver_baseline_tests COMMAND test_solver_baseline)
+
+add_executable(test_solver_pdb
+    tests/test_solver_pdb.cpp
+)
+target_link_libraries(test_solver_pdb PRIVATE rubik_engine)
+target_compile_options(test_solver_pdb PRIVATE
+    -Wall -Wextra -Wpedantic
+)
+
+add_test(NAME solver_pdb_tests COMMAND test_solver_pdb)
