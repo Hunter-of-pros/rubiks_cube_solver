@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(rubik_engine
     src/cube.cpp
     src/move.cpp
+    src/cubie.cpp
+    src/scrambler.cpp
 )
 
 target_include_directories(rubik_engine PUBLIC
@@ -29,3 +31,13 @@ target_compile_options(test_cube PRIVATE
 )
 
 add_test(NAME cube_tests COMMAND test_cube)
+
+add_executable(test_engine
+    tests/test_engine.cpp
+)
+target_link_libraries(test_engine PRIVATE rubik_engine)
+target_compile_options(test_engine PRIVATE
+    -Wall -Wextra -Wpedantic
+)
+
+add_test(NAME engine_tests COMMAND test_engine)
