@@ -10,6 +10,7 @@ add_library(rubik_engine
     src/move.cpp
     src/cubie.cpp
     src/scrambler.cpp
+    src/ida_star.cpp
 )
 
 target_include_directories(rubik_engine PUBLIC
@@ -41,3 +42,13 @@ target_compile_options(test_engine PRIVATE
 )
 
 add_test(NAME engine_tests COMMAND test_engine)
+
+add_executable(test_solver_baseline
+    tests/test_solver_baseline.cpp
+)
+target_link_libraries(test_solver_baseline PRIVATE rubik_engine)
+target_compile_options(test_solver_baseline PRIVATE
+    -Wall -Wextra -Wpedantic
+)
+
+add_test(NAME solver_baseline_tests COMMAND test_solver_baseline)
