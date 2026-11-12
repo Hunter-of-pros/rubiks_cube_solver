@@ -28,12 +28,12 @@
 - `backend/app/cv/camera.py`, `backend/scripts/capture_faces.py` & `backend/tests/test_camera.py`: OpenCV webcam capture wrapper, `URFDLB` scan-order prompts, 3×3 alignment grid & inner sticker ROI geometry.
 - `backend/app/cv/colors.py`, `backend/app/cv/detector.py`, `backend/app/services/solver_bridge.py` & `backend/scripts/scan_live.py`: Glare-filtered HSV/LAB feature extraction, HSV baseline classifier, optional contour face detection, live auto-capture scanner with mirrored preview & color-coded neighbor bars, and C++ solver bridge (`test_vision_pipeline.py`).
 - `backend/app/ml/dataset.py`, `backend/app/ml/classifier.py`, `backend/scripts/collect_dataset.py` & `backend/scripts/evaluate_color_models.py`: Dataset I/O, controlled synthetic lighting benchmark, circular-Hue 11-D features, k-NN / SVM (RBF) / Random Forest classifiers, evaluation plots (`experiments/vision_benchmarks/hsv_vs_ml_lighting.png`), and `test_ml_classifier.py`.
+- `backend/app/main.py`, `backend/app/api/routes.py` & `backend/tests/test_api.py`: FastAPI REST endpoints (`/api/health`, `/api/validate`, `/api/solve`, `/api/scramble`, `/api/apply-moves`, `/api/scan-face`) wired to C++ `rubik_solver --validate-only` and CV/ML detection.
 
 ## Pending Tasks (Next Up)
 
-1. Build FastAPI backend routes (`/api/health`, `/api/validate`, `/api/solve`, `/api/scan-frame`) (`feature/api-integration`).
-2. Build React frontend with manual 54-sticker editor, webcam scanner, 2D/3D cube visualizer, and step-by-step playback (`feature/react-ui`).
-3. Collect real-webcam sticker samples (`collect_dataset.py`) to validate Phase 5 ML models outside synthetic lighting shifts and finalize Phase 7 report.
+1. Build React frontend with manual 54-sticker editor, webcam scanner, 2D/3D cube visualizer, and step-by-step playback (`feature/react-ui`).
+2. Collect real-webcam sticker samples (`collect_dataset.py`) to validate Phase 5 ML models outside synthetic lighting shifts and finalize Phase 7 report.
 
 ## Testing Checklist
 
