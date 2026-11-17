@@ -9,7 +9,7 @@
 - [x] **M4: Phase 4 — Computer Vision** — OpenCV webcam capture, sticker grid detection, 6-face reconstruction
 - [x] **M5: Phase 5 — Machine Learning** — Labeled sticker dataset, HSV baseline vs. ML models, lighting tests
 - [x] **M6: Phase 6 — Frontend & Integration** — FastAPI routes, C++ bridge, React scanner/editor/playback UI
-- [ ] **M7: Phase 7 — Research & Benchmarking** — Reproducible experiments, measured tables and plots
+- [x] **M7: Phase 7 — Research & Benchmarking** — Reproducible experiments, measured tables and plots
 
 ## Completed Modules
 
@@ -30,11 +30,13 @@
 - `backend/app/ml/dataset.py`, `backend/app/ml/classifier.py`, `backend/scripts/collect_dataset.py` & `backend/scripts/evaluate_color_models.py`: Dataset I/O, controlled synthetic lighting benchmark, circular-Hue 11-D features, k-NN / SVM (RBF) / Random Forest classifiers, evaluation plots (`experiments/vision_benchmarks/hsv_vs_ml_lighting.png`), and `test_ml_classifier.py`.
 - `backend/app/main.py`, `backend/app/api/routes.py` & `backend/tests/test_api.py`: FastAPI REST endpoints (`/api/health`, `/api/validate`, `/api/solve`, `/api/scramble`, `/api/apply-moves`, `/api/scan-face`) wired to C++ `rubik_solver --validate-only` and CV/ML detection.
 - `frontend/src/` (`App.jsx`, `CubeNetEditor.jsx`, `Cube3DView.jsx`, `WebcamScanner.jsx`, `SolutionPlayback.jsx`, `utils/cube.js`, `services/api.js`): React + Vite interactive UI with manual editor, webcam scanner, 3D/2D cube visualization, and step-by-step playback (`cube.test.js`).
+- `backend/scripts/plot_solver_benchmarks.py` & `experiments/solver_benchmarks/`: Automated benchmark visualization script generating runtime (`solver_runtime_vs_depth.png`), search tree pruning (`solver_nodes_vs_depth.png`), solution length (`solver_moves_vs_depth.png`), and 3-panel summary dashboard (`solver_summary_dashboard.png`).
 
-## Pending Tasks (Next Up)
+## Optional Future Explorations
 
-1. Generate Phase 7 solver comparison plots from `experiments/solver_benchmarks/solver_comparison.csv` (`feature/benchmarks`).
-2. Collect real-webcam sticker samples (`collect_dataset.py`) to validate Phase 5 ML models outside synthetic lighting shifts and finalize `docs/experiments.md`.
+1. Collect real-world camera datasets across varying phone/webcam models to evaluate physical sensor noise profiles.
+2. Add WebGL / Three.js 3D cube renderer with smooth rotation animations (complementing the lightweight CSS 3D cube).
+3. Implement Korff's optimal 20-move solver using full 8-corner + 8-edge Pattern Databases (requiring ~4 GB RAM).
 
 ## Testing Checklist
 

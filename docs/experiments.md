@@ -56,6 +56,14 @@ Generated with `./cpp/build/benchmark_solvers --trials 10 --csv experiments/solv
 
 **Key takeaway**: Pattern databases cut IDA\* nodes at depth 6 from `2,873.1` down to `9.9` (~290× fewer nodes) while staying strictly optimal. For full 20-move scrambles, Kociemba solves 20/20 trials in an average of `26.12 ms` and `20.40` moves while using less than half the memory and ~27× faster table startup than our 5-piece PDBs.
 
+### Visual Benchmark Plots
+
+Generated with `.venv/bin/python backend/scripts/plot_solver_benchmarks.py`:
+- [solver_summary_dashboard.png](experiments/solver_benchmarks/solver_summary_dashboard.png): 3-panel comparison summarizing Runtime, Search Tree Pruning, and Solution Length.
+- [solver_runtime_vs_depth.png](experiments/solver_benchmarks/solver_runtime_vs_depth.png): Log-scale execution time (ms) showing exponential growth for baseline IDA* vs sub-linear growth for Kociemba.
+- [solver_nodes_vs_depth.png](experiments/solver_benchmarks/solver_nodes_vs_depth.png): Log-scale search tree size showing order-of-magnitude pruning from Pattern Databases.
+- [solver_moves_vs_depth.png](experiments/solver_benchmarks/solver_moves_vs_depth.png): Solution length against the optimal $y=x$ reference line.
+
 ---
 
 ## Measured Results — Experiment 2: HSV Baseline vs. ML Color Recognition (Synthetic Lighting Benchmark)
