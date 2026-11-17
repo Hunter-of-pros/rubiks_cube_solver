@@ -5,6 +5,7 @@ All notable progress in `rubiks_cube_solver` is tracked here as milestones are c
 ## [Unreleased]
 
 ### Added
+- Phase 7 Research & Benchmarking visualization tool (`backend/scripts/plot_solver_benchmarks.py`) and publication-grade plots (`solver_runtime_vs_depth.png`, `solver_nodes_vs_depth.png`, `solver_moves_vs_depth.png`, `solver_summary_dashboard.png`) documenting empirical performance across IDA* baseline, IDA* with Pattern Databases, and Kociemba Two-Phase algorithms.
 - Phase 6B React + Vite UI (`frontend/`) featuring a 2D manual sticker editor, draggable 3D cube view, browser webcam scanner wired to `/api/scan-face`, step-by-step solution playback, and Vitest cube-rotation tests.
 - Phase 6A FastAPI REST API (`backend/app/main.py`, `backend/app/api/routes.py`), `--validate-only` and `facelets` output in `rubik_solver`, expanded `solver_bridge.py`, and FastAPI `TestClient` integration tests (`test_api.py`).
 - Phase 5 ML color classification (`backend/app/ml/dataset.py`, `backend/app/ml/classifier.py`), interactive `collect_dataset.py`, `evaluate_color_models.py` comparing HSV vs. k-NN/SVM/Random Forest across lighting regimes, `hsv_vs_ml_lighting.png` plot, and `test_ml_classifier.py`.
