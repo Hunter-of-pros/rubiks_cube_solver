@@ -3,6 +3,15 @@ export const SOLVED_FACELETS =
 
 export const FACES = ['U', 'R', 'F', 'D', 'L', 'B'];
 
+export const CANONICAL_FACE_CENTERS = {
+  U: 'W',
+  R: 'R',
+  F: 'G',
+  D: 'Y',
+  L: 'O',
+  B: 'B',
+};
+
 export const COLORS = {
   W: { name: 'White', hex: '#FFFFFF', text: '#0F172A', border: '#E2E8F0', glow: 'rgba(255,255,255,0.4)' },
   R: { name: 'Red', hex: '#DC2626', text: '#FFFFFF', border: '#991B1B', glow: 'rgba(220,38,38,0.45)' },

@@ -5,6 +5,8 @@ All notable progress in `rubiks_cube_solver` is tracked here as milestones are c
 ## [Unreleased]
 
 ### Added
+- Enhanced Orange vs. Red color recognition with 21-D feature vectors ($G/R$ ratio, $(R-G)/(R+G)$, CIE LAB $L^*$ luminance, normalized $rgb$ chromaticity) and multi-brand physical 3×3 cube profiles (GAN/MoYu frosted, Rubik's vinyl, QiYi matte, DaYan vibrant, worn cube) across 7 lighting regimes, achieving 100.00% accuracy on 700 Red/Orange test samples.
+- Fixed center piece locking in webcam scanner (`WebcamScanner.jsx`) and exported `CANONICAL_FACE_CENTERS` to enforce the physical 3×3 core invariant (`U: W, R: R, F: G, D: Y, L: O, B: B`).
 - Phase 7 Research & Benchmarking visualization tool (`backend/scripts/plot_solver_benchmarks.py`) and publication-grade plots (`solver_runtime_vs_depth.png`, `solver_nodes_vs_depth.png`, `solver_moves_vs_depth.png`, `solver_summary_dashboard.png`) documenting empirical performance across IDA* baseline, IDA* with Pattern Databases, and Kociemba Two-Phase algorithms.
 - Phase 6B React + Vite UI (`frontend/`) featuring a 2D manual sticker editor, draggable 3D cube view, browser webcam scanner wired to `/api/scan-face`, step-by-step solution playback, and Vitest cube-rotation tests.
 - Phase 6A FastAPI REST API (`backend/app/main.py`, `backend/app/api/routes.py`), `--validate-only` and `facelets` output in `rubik_solver`, expanded `solver_bridge.py`, and FastAPI `TestClient` integration tests (`test_api.py`).

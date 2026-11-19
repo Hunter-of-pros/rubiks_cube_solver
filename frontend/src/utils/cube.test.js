@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CANONICAL_FACE_CENTERS,
   FACES,
   SOLVED_FACELETS,
   applyMove,
@@ -42,5 +43,16 @@ describe('client-side cube rotation helpers', () => {
     expect(states).toHaveLength(4);
     expect(states[0]).toBe(scrambled);
     expect(states[3]).toBe(SOLVED_FACELETS);
+  });
+
+  it('maps standard 3x3 canonical face centers correctly', () => {
+    expect(CANONICAL_FACE_CENTERS).toEqual({
+      U: 'W',
+      R: 'R',
+      F: 'G',
+      D: 'Y',
+      L: 'O',
+      B: 'B',
+    });
   });
 });

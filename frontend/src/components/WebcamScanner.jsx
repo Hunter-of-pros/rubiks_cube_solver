@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { scanFaceBlob } from '../services/api';
-import { COLORS, FACES, SCAN_PROMPTS } from '../utils/cube';
+import { COLORS, FACES, SCAN_PROMPTS, CANONICAL_FACE_CENTERS } from '../utils/cube';
 import {
   AlertCircleIcon,
   CameraIcon,
@@ -77,9 +77,13 @@ export default function WebcamScanner({ onApplyScannedCube }) {
       setLiveDetection(data);
 
       if (saveToFace) {
+        const faceColors = [...data.colors];
+        if (CANONICAL_FACE_CENTERS[activePrompt.code]) {
+          faceColors[4] = CANONICAL_FACE_CENTERS[activePrompt.code];
+        }
         setScannedFaces((prev) => ({
           ...prev,
-          [activePrompt.code]: data.colors,
+          [activePrompt.code]: faceColors,
         }));
         if (promptIndex < SCAN_PROMPTS.length - 1) {
           setPromptIndex((i) => i + 1);
@@ -101,6 +105,7 @@ export default function WebcamScanner({ onApplyScannedCube }) {
   });
 
   const cycleScannedSticker = (faceCode, stickerIdx) => {
+    if (stickerIdx === 4) return; // Center sticker is physically fixed to the face
     setScannedFaces((prev) => {
       const current = prev[faceCode] || [];
       if (current.length !== 9) return prev;

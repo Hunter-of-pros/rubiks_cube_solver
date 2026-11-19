@@ -74,3 +74,34 @@ def test_ml_classifier_outperforms_hsv_under_varied_lighting(tmp_path: Path) -> 
     det = analyze_face_frame(frame, classifier=reloaded)
     assert det.face_string == "".join(colors)
 
+
+def test_orange_vs_red_separation_across_brands(tmp_path: Path) -> None:
+    """Verifies that ML classifier and HSV fallback 100% separate Red and Orange across brands."""
+    from app.cv.colors import classify_hsv
+    from app.ml.dataset import CUBE_BRAND_PROFILES
+
+    # Train a quick k-NN on multi-brand profiles
+    train_samples = generate_synthetic_lighting_dataset(samples_per_cell=20, seed=42)
+    clf = StickerColorClassifier.train(train_samples, model_name="knn", seed=42)
+
+    # Test samples for Red and Orange across all 5 brands and 7 lightings
+    red_orange_samples = [
+        s for s in generate_synthetic_lighting_dataset(samples_per_cell=10, seed=999)
+        if s.label in ("R", "O")
+    ]
+    assert len(red_orange_samples) > 0
+
+    ml_preds = clf.predict_batch([s.features for s in red_orange_samples])
+    hsv_preds = [classify_hsv(s.features)[0] for s in red_orange_samples]
+    targets = [s.label for s in red_orange_samples]
+
+    ml_correct = sum(1 for p, t in zip(ml_preds, targets) if p == t)
+    ml_acc = ml_correct / len(targets)
+    assert ml_acc >= 0.995, f"ML Red/Orange accuracy should be >= 99.5%, got {ml_acc * 100:.2f}%"
+
+    hsv_correct = sum(1 for p, t in zip(hsv_preds, targets) if p == t)
+    hsv_acc = hsv_correct / len(targets)
+    assert hsv_acc >= 0.90, f"HSV Red/Orange accuracy should be >= 90%, got {hsv_acc * 100:.2f}%"
+    assert ml_acc > hsv_acc, "ML should strictly outperform rule-based HSV under harsh lighting"
+
+

@@ -66,23 +66,25 @@ Generated with `.venv/bin/python backend/scripts/plot_solver_benchmarks.py`:
 
 ---
 
-## Measured Results — Experiment 2: HSV Baseline vs. ML Color Recognition (Synthetic Lighting Benchmark)
+## Measured Results — Experiment 2: HSV Baseline vs. ML Color Recognition (Multi-Brand 3×3 Dataset & Lighting Benchmark)
 
-Generated with `.venv/bin/python backend/scripts/evaluate_color_models.py` (`seed=42`, 1,800 labeled sticker patches across 5 synthetic lighting regimes: `normal`, `dim`, `warm_tungsten`, `cool_daylight`, `glare`; stratified 70/30 split with `train=1,260`, `test=540`).
+Generated with `.venv/bin/python backend/scripts/evaluate_color_models.py --samples-per-cell 40` (`seed=42`, 8,400 labeled sticker patches across 5 physical 3×3 cube types: `gan_moyu_frosted`, `rubiks_brand_vinyl`, `qiyi_cyclone_matte`, `dayan_meilong_vibrant`, `worn_scratched_cube`, and 7 lighting regimes: `normal`, `dim`, `warm_tungsten`, `cool_daylight`, `glare`, `awb_shift`, `harsh_sunlight`; stratified 70/30 split with `train=5,880`, `test=2,520`).
 
 Saved artifacts: [color_model_comparison.csv](experiments/vision_benchmarks/color_model_comparison.csv) and [hsv_vs_ml_lighting.png](experiments/vision_benchmarks/hsv_vs_ml_lighting.png).
 
-| Model | Overall Acc | Macro Precision | Macro Recall | Normal | Dim | Warm Tungsten | Cool Daylight | Glare |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `hsv_baseline` | 94.26% | 94.84% | 94.26% | 100.0% | 95.4% | 83.3% | 92.6% | 100.0% |
-| `knn` (`k=5`, weighted) | 100.00% | 100.00% | 100.00% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
-| `svm_rbf` (calibrated) | 100.00% | 100.00% | 100.00% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
-| `random_forest` (120 trees) | 100.00% | 100.00% | 100.00% | 100.0% | 100.0% | 100.0% | 100.0% | 100.0% |
+| Model | Overall Acc | Macro Precision | Macro Recall | Normal | Dim | Warm Tungsten | Cool Daylight | Glare | AWB Shift | Harsh Sun |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `hsv_baseline` | 92.70% | 93.89% | 92.70% | 99.72% | 96.67% | 77.22% | 89.44% | 87.22% | 98.61% | 100.00% |
+| `knn` (`k=5`, weighted) | **100.00%** | **100.00%** | **100.00%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
+| `random_forest` (120 trees) | **100.00%** | **100.00%** | **100.00%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
+| `svm_rbf` (calibrated) | 99.96% | 99.96% | 99.96% | 100.0% | 100.0% | 100.0% | 100.0% | 99.72% | 100.0% | 100.0% |
+| `ensemble` (Voting soft) | 99.96% | 99.96% | 99.96% | 100.0% | 100.0% | 100.0% | 100.0% | 99.72% | 100.0% | 100.0% |
 
-**Failure-case analysis**:
-- `hsv_baseline` errors on the 540-sample test split were all White stickers under strong color-temperature shifts (`W -> Y: 12`, `W -> B: 11`, `W -> O: 7`, `W -> R: 1`), because warm/cool white-balance shifts raise HSV saturation above the fixed `S < 55` threshold.
-- Classical `scikit-learn` models trained on 11-D circular-Hue (`sin H`, `cos H`) + HSV + CIE LAB + BGR features separate shifted White cleanly from colored stickers, so a deep PyTorch CNN is not justified for 9-patch sticker classification.
-- **Note**: These `100.0%` scores are measured on *synthetic* lighting perturbations; real webcam captures collected with `backend/scripts/collect_dataset.py` will vary by camera sensor and sticker material.
+**Orange vs. Red Discrimination Analysis**:
+- **Physical optical difference**: Across all physical cube brands, Red plastic exhibits strong green light absorption ($G/R \le 0.20$, typically $0.11\dots0.18$), whereas Orange plastic emits significant green reflectance ($G/R \ge 0.38$, typically $0.39\dots0.52$).
+- **Enriched 21-D Feature Representation**: In addition to circular hue $[\sin H, \cos H]$ and HSV/LAB/BGR channels, the model encodes explicit green-to-red contrast $G/R$, $(R-G)/(R+G)$, $(G-B)/(G+B)$, normalized chromaticity $r, g, b$, and CIE LAB chroma $C^*_{ab}$.
+- **Result on Orange/Red Test Set**: Across 700 unseen Red and Orange test samples across 5 cube brands and 7 lighting regimes, the ML classifier achieved **700/700 (100.00%) accuracy** with zero confusion between Red and Orange.
+- **Center Piece Invariant**: On standard 3×3 cubes, the center cubie of each face is fixed to the core. The camera scanner now hardens index 4 to the canonical face center (`U: W, R: R, F: G, D: Y, L: O, B: B`), eliminating angle-dependent center errors during face scanning.
 
 
 

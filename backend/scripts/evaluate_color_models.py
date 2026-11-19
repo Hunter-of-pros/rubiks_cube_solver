@@ -147,7 +147,7 @@ def main() -> int:
     test_lightings = [s.lighting for s in test_samples]
     test_features = [s.features for s in test_samples]
 
-    for model_name in ("knn", "svm_rbf", "random_forest"):
+    for model_name in ("knn", "svm_rbf", "random_forest", "ensemble"):
         clf = StickerColorClassifier.train(train_samples, model_name=model_name, seed=args.seed)
         y_pred = clf.predict_batch(test_features)
         ev = evaluate_predictions(model_name, y_test, y_pred, test_lightings)

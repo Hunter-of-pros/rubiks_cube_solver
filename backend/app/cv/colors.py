@@ -102,10 +102,15 @@ def _hue_band_confidence(h: float, center: float, half_width: float) -> float:
 
 
 def classify_hsv(features: StickerFeatures) -> Tuple[str, float]:
-    """Rule-based HSV baseline color classifier returning (color_code, confidence)."""
-    h, s, v = features.h_med, features.s_med, features.v_med
+    """Rule-based color classifier combining HSV, CIE LAB, and physical RGB ratios.
 
-    # Achromatic check first: white stickers have low saturation and decent brightness.
+    Uses the Green/Red emission ratio and CIE LAB lightness to separate Red from
+    Orange unambiguously across varying lighting conditions and cube brands.
+    """
+    h, s, v = features.h_med, features.s_med, features.v_med
+    b_val, g_val, r_val = features.bgr_med
+
+    # Achromatic check: white stickers have low saturation and decent brightness.
     if s < 55.0 and v > 95.0:
         conf = float(np.clip((55.0 - s) / 55.0 * 0.5 + 0.45, 0.35, 0.99))
         return "W", conf
@@ -114,18 +119,29 @@ def classify_hsv(features: StickerFeatures) -> Tuple[str, float]:
     if v < 35.0:
         return "W" if s < 55.0 else "B", 0.25
 
-    # OpenCV Hue range is [0, 180).
-    # Red wraps around 0/180, Orange sits roughly 6..21, Yellow 21..39, Green 39..86, Blue 86..135.
-    if h >= 165.0 or h < 6.0:
-        conf = _hue_band_confidence(h, 0.0, 15.0)
-        if 4.0 <= h < 6.0:
-            conf = min(conf, 0.5)  # Borderline Red/Orange
-        return "R", conf
-    if h < 21.0:
-        conf = _hue_band_confidence(h, 13.0, 8.0)
-        if h < 8.0 or h > 19.0:
-            conf = min(conf, 0.52)
-        return "O", conf
+    # Physical color ratios:
+    # Red plastic absorbs Green almost completely: G/R is typically 0.08..0.22.
+    # Orange plastic emits substantial Green (Orange = Red + Yellow): G/R is 0.35..0.55.
+    g_over_r = g_val / max(r_val, 1.0)
+    rg_diff = (r_val - g_val) / max(r_val + g_val, 1.0)
+
+    # Red/Orange/Yellow spectral zone (Hue around 0..39 or 160..180)
+    if h >= 160.0 or h < 24.0:
+        # Check if clearly Red: low green emission, high red-green difference, lower lightness
+        if g_over_r < 0.27 and rg_diff > 0.50:
+            conf = _hue_band_confidence(h, 0.0, 15.0)
+            return "R", max(conf, 0.85)
+
+        # Check if clearly Orange: significant green emission and higher lightness
+        if g_over_r >= 0.27 or (6.0 <= h < 22.0 and features.l_med > 120.0):
+            conf = _hue_band_confidence(h, 13.0, 8.0)
+            return "O", max(conf, 0.85)
+
+        # Fallback based on Hue threshold
+        if h >= 165.0 or h < 5.0:
+            return "R", 0.70
+        return "O", 0.70
+
     if h < 39.0:
         conf = _hue_band_confidence(h, 29.0, 9.0)
         return "Y", conf
@@ -136,5 +152,7 @@ def classify_hsv(features: StickerFeatures) -> Tuple[str, float]:
         conf = _hue_band_confidence(h, 110.0, 26.0)
         return "B", conf
 
-    # Hue 138..165 (magenta/purple cast on warm red) -> lean Red with lower confidence.
-    return "R", 0.4
+    # Hue 138..160 (magenta/purple cast on warm red)
+    if g_over_r < 0.27:
+        return "R", 0.75
+    return "O", 0.55
