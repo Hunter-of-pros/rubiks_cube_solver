@@ -285,7 +285,6 @@ body {
 
 .stage-viewport {
   width: 100%;
-  height: 380px;
   background: radial-gradient(circle at 50% 50%, #15151a 0%, #0c0c0f 80%);
   border-radius: 16px;
   border: 1px solid var(--border-hairline);
@@ -294,10 +293,16 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
+.three-stage-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 /* Three.js Viewport */
 .three-viewport-wrap {
   width: 100%;
-  height: 100%;
+  height: 380px;
   position: relative;
   display: flex;
   align-items: center;
@@ -316,12 +321,13 @@ body {
 
 .three-move-hud {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px;
+  padding: 6px 14px;
   background: rgba(18, 18, 22, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -345,38 +351,206 @@ body {
   font-weight: 500;
 }
 
-.three-hud-controls {
+/* 3D Orbit D-Pad (Camera Rotation Controls) */
+.orbit-controls-dpad {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(18, 18, 22, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-.three-hud-btn {
-  padding: 5px 10px;
+.dpad-mid-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dpad-btn {
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
-  background: rgba(18, 18, 22, 0.7);
-  backdrop-filter: blur(8px);
   border: 1px solid var(--border-hairline);
+  background: var(--bg-surface);
   color: var(--text-med);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.dpad-btn:hover {
+  background: var(--bg-surface-hover);
+  color: #ffffff;
+  border-color: var(--border-subtle);
+}
+
+.dpad-btn.center-btn {
+  font-size: 0.85rem;
+}
+
+/* Preset View Pills */
+.view-presets-strip {
+  position: absolute;
+  bottom: 30px;
+  left: 14px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(18, 18, 22, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline);
+}
+
+.preset-pill {
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-low);
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
 }
 
-.three-hud-btn:hover {
-  background: rgba(28, 28, 34, 0.9);
+.preset-pill:hover {
   color: var(--text-high);
-  border-color: var(--border-subtle);
+}
+
+.preset-pill.active {
+  background: var(--bg-surface-elevated);
+  color: #ffffff;
 }
 
 .three-gesture-hint {
   position: absolute;
-  bottom: 12px;
-  font-size: 0.72rem;
+  bottom: 8px;
+  right: 14px;
+  font-size: 0.7rem;
   color: var(--text-dim);
   letter-spacing: 0.04em;
   pointer-events: none;
+}
+
+/* ==========================================================================
+   Face Rotation Deck (Turn Cube Layers)
+   ========================================================================== */
+
+.face-rotation-deck {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-hairline);
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: none;
+}
+
+.deck-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-low);
+  text-transform: uppercase;
+}
+
+.face-button-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 680px) {
+  .face-button-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.face-control-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg-well);
+  border: 1px solid var(--border-hairline);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.face-turn-btn {
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+  padding: 0;
+}
+
+.face-turn-btn.primary-cw {
+  height: 32px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-high);
+  font-size: 0.85rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.face-turn-btn.primary-cw:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-subtle);
+  transform: translateY(-1px);
+}
+
+.face-turn-btn.primary-cw:active {
+  transform: translateY(0);
+}
+
+.face-swatch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.face-turn-arrow {
+  font-size: 0.78rem;
+  color: var(--text-low);
+}
+
+.face-turn-btn.sub-ccw,
+.face-turn-btn.sub-double {
+  height: 22px;
+  background: transparent;
+  color: var(--text-low);
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 4px;
+}
+
+.face-turn-btn.sub-ccw:hover,
+.face-turn-btn.sub-double:hover {
+  background: var(--bg-surface);
+  color: var(--text-high);
 }
 
 /* Fallback CSS 3D */
