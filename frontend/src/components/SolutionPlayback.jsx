@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { describeMove } from '../utils/cube';
+import { playCubeClick, playSolvedChime } from '../utils/audio';
 import {
   AlertCircleIcon,
   CheckCircleIcon,
@@ -13,9 +14,9 @@ import {
 } from './Icons';
 
 const SPEED_PRESETS = [
-  { label: 'Fast', ms: 400 },
-  { label: 'Normal', ms: 750 },
-  { label: 'Slow', ms: 1200 },
+  { label: '0.4s', ms: 400 },
+  { label: '0.7s', ms: 750 },
+  { label: '1.2s', ms: 1200 },
 ];
 
 export default function SolutionPlayback({
@@ -30,6 +31,7 @@ export default function SolutionPlayback({
   onTogglePlay,
   speedMs,
   onChangeSpeed,
+  soundMuted = false,
 }) {
   const moves = solveResult?.move_list || [];
   const totalSteps = moves.length;
@@ -37,20 +39,22 @@ export default function SolutionPlayback({
   const isSolvedAtEnd = stepIndex >= totalSteps && totalSteps > 0;
   const ribbonRef = useRef(null);
 
-  // Auto-step timer
+  // Auto-play timer
   useEffect(() => {
     if (!isPlaying) return undefined;
     if (stepIndex >= totalSteps) {
       onTogglePlay(false);
+      playSolvedChime(soundMuted);
       return undefined;
     }
     const timer = setTimeout(() => {
       onStepChange(stepIndex + 1);
+      playCubeClick(soundMuted);
     }, speedMs);
     return () => clearTimeout(timer);
-  }, [isPlaying, stepIndex, totalSteps, speedMs, onStepChange, onTogglePlay]);
+  }, [isPlaying, stepIndex, totalSteps, speedMs, onStepChange, onTogglePlay, soundMuted]);
 
-  // Auto-scroll ribbon to keep active move visible
+  // Ribbon auto-scroll
   useEffect(() => {
     if (!ribbonRef.current) return;
     const activeElem = ribbonRef.current.querySelector('.move-chip.current');
@@ -59,194 +63,189 @@ export default function SolutionPlayback({
     }
   }, [stepIndex]);
 
+  const handleStep = (nextIdx) => {
+    onTogglePlay(false);
+    onStepChange(nextIdx);
+    playCubeClick(soundMuted);
+    if (nextIdx >= totalSteps && totalSteps > 0) {
+      playSolvedChime(soundMuted);
+    }
+  };
+
   return (
-    <div className="card playback-card">
-      <div className="card-header">
-        <div className="header-meta">
-          <span className="card-tag">Search &amp; Playback</span>
-          <h2 className="card-title">Solution Engine</h2>
-        </div>
-        <div className="solve-action-group">
+    <div className="playback-dock">
+      {/* Solver Action Bar */}
+      <div className="dock-action-bar">
+        <div className="algo-selector-wrap">
           <select
-            className="algo-select"
+            className="algo-selector"
             value={algorithm}
             onChange={(e) => onChangeAlgorithm(e.target.value)}
-            aria-label="Solver algorithm"
             disabled={solving}
+            aria-label="Solver Algorithm"
           >
-            <option value="kociemba">Kociemba Two-Phase (Fastest)</option>
-            <option value="ida-pdb">IDA* + Pattern DB (Optimal)</option>
+            <option value="kociemba">Kociemba Two-Phase (Sub-30ms)</option>
+            <option value="ida-pdb">IDA* + Pattern Databases (Optimal)</option>
             <option value="ida-base">IDA* Baseline (Shallow)</option>
           </select>
-
-          <button
-            type="button"
-            className="btn-accent"
-            disabled={solving}
-            onClick={onSolve}
-          >
-            <ZapIcon size={15} />
-            <span>{solving ? 'Solving...' : 'Solve'}</span>
-          </button>
         </div>
+
+        <button
+          type="button"
+          className="btn-solve-primary"
+          disabled={solving}
+          onClick={onSolve}
+        >
+          <ZapIcon size={16} />
+          <span>{solving ? 'Solving...' : 'Solve Cube'}</span>
+        </button>
       </div>
 
       {solveResult && !solveResult.valid && (
-        <div className="status-banner error">
-          <AlertCircleIcon size={18} />
+        <div className="dock-status-msg error">
+          <AlertCircleIcon size={16} />
           <span>{solveResult.error || 'Invalid cube configuration'}</span>
         </div>
       )}
 
       {solveResult && solveResult.valid && !solveResult.solved && (
-        <div className="status-banner error">
-          <AlertCircleIcon size={18} />
-          <span>{solveResult.error || 'Search reached limit before finding solution'}</span>
+        <div className="dock-status-msg error">
+          <AlertCircleIcon size={16} />
+          <span>{solveResult.error || 'Search exceeded depth limit'}</span>
         </div>
       )}
 
       {solveResult && solveResult.solved && (
-        <div className="playback-body">
-          {/* Executive Metrics Grid */}
-          <div className="metrics-grid">
-            <div className="metric-tile">
-              <span className="metric-value">{solveResult.solution_length}</span>
-              <span className="metric-label">Moves (HTM)</span>
-            </div>
-            <div className="metric-tile">
-              <span className="metric-value">{solveResult.elapsed_ms.toFixed(2)}</span>
-              <span className="metric-label">Runtime (ms)</span>
-            </div>
-            <div className="metric-tile">
-              <span className="metric-value">
-                {solveResult.nodes_expanded.toLocaleString()}
-              </span>
-              <span className="metric-label">Nodes Explored</span>
-            </div>
-            <div className="metric-tile">
-              <span className="metric-value">
-                {(solveResult.memory_bytes / (1024 * 1024)).toFixed(1)} MB
-              </span>
-              <span className="metric-label">Memory Footprint</span>
-            </div>
+        <div className="playback-panel">
+          {/* Subtle Technical Telemetry Strip */}
+          <div className="telemetry-bar">
+            <span className="telemetry-item">
+              <strong className="mono">{solveResult.solution_length}</strong> moves
+            </span>
+            <span className="telemetry-divider">&bull;</span>
+            <span className="telemetry-item">
+              <strong className="mono">{solveResult.elapsed_ms.toFixed(2)}</strong> ms
+            </span>
+            <span className="telemetry-divider">&bull;</span>
+            <span className="telemetry-item">
+              <strong className="mono">{solveResult.nodes_expanded.toLocaleString()}</strong> nodes
+            </span>
+            <span className="telemetry-divider">&bull;</span>
+            <span className="telemetry-item">
+              <strong className="mono">{(solveResult.memory_bytes / (1024 * 1024)).toFixed(1)}</strong> MB
+            </span>
           </div>
 
           {totalSteps === 0 ? (
-            <div className="status-banner success">
-              <CheckCircleIcon size={18} />
-              <span>Cube is already solved! No moves required.</span>
+            <div className="dock-status-msg success">
+              <CheckCircleIcon size={16} />
+              <span>Cube is already solved.</span>
             </div>
           ) : (
             <>
-              {/* Active Step Hero Banner */}
-              <div className="active-step-card">
-                <div className="step-badge-col">
-                  <span className="step-counter">
-                    {isSolvedAtEnd ? 'SOLVED' : `STEP ${stepIndex + 1} / ${totalSteps}`}
+              {/* Active Step Presentation */}
+              <div className="hero-step-box">
+                <div className="hero-step-badge">
+                  <span className="hero-badge-tag">
+                    {isSolvedAtEnd ? 'STATE' : `MOVE ${stepIndex + 1} OF ${totalSteps}`}
                   </span>
-                  <span className="step-move-callout">
-                    {isSolvedAtEnd ? '✓' : activeMove}
+                  <span className="hero-badge-move mono">
+                    {isSolvedAtEnd ? 'SOLVED' : activeMove}
                   </span>
                 </div>
-                <div className="step-info-col">
-                  <p className="step-instruction-text">
+
+                <div className="hero-step-details">
+                  <p className="hero-instruction">
                     {isSolvedAtEnd
-                      ? 'Cube is fully restored to its solved state.'
+                      ? 'Cube is fully restored to identity state.'
                       : describeMove(activeMove)}
                   </p>
-                  <div className="step-progress-track">
+                  <div className="timeline-scrubber">
+                    <input
+                      type="range"
+                      min="0"
+                      max={totalSteps}
+                      value={stepIndex}
+                      onChange={(e) => handleStep(Number(e.target.value))}
+                      className="scrubber-slider"
+                      aria-label="Solution Timeline Scrubber"
+                    />
                     <div
-                      className="step-progress-fill"
+                      className="scrubber-fill"
                       style={{ width: `${(stepIndex / totalSteps) * 100}%` }}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Media Transport Controls */}
-              <div className="transport-row">
-                <div className="transport-controls">
+              {/* Media Controls Row */}
+              <div className="transport-deck">
+                <div className="transport-group">
                   <button
                     type="button"
                     className="transport-btn"
                     disabled={stepIndex === 0}
-                    onClick={() => {
-                      onTogglePlay(false);
-                      onStepChange(0);
-                    }}
-                    title="Jump to start"
+                    onClick={() => handleStep(0)}
+                    title="Jump to start [Home]"
                   >
-                    <SkipBackIcon size={16} />
+                    <SkipBackIcon size={15} />
                   </button>
-
                   <button
                     type="button"
                     className="transport-btn"
                     disabled={stepIndex === 0}
-                    onClick={() => {
-                      onTogglePlay(false);
-                      onStepChange(Math.max(0, stepIndex - 1));
-                    }}
-                    title="Previous move"
+                    onClick={() => handleStep(Math.max(0, stepIndex - 1))}
+                    title="Previous move [Left Arrow]"
                   >
-                    <StepBackIcon size={16} />
+                    <StepBackIcon size={15} />
                   </button>
-
                   <button
                     type="button"
-                    className="transport-btn-hero"
+                    className="transport-btn-play"
                     onClick={() => {
                       if (stepIndex >= totalSteps) onStepChange(0);
                       onTogglePlay(!isPlaying);
                     }}
-                    title={isPlaying ? 'Pause' : 'Play'}
+                    title={isPlaying ? 'Pause [Space]' : 'Play [Space]'}
                   >
-                    {isPlaying ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
+                    {isPlaying ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
                   </button>
-
                   <button
                     type="button"
                     className="transport-btn"
                     disabled={stepIndex >= totalSteps}
-                    onClick={() => {
-                      onTogglePlay(false);
-                      onStepChange(Math.min(totalSteps, stepIndex + 1));
-                    }}
-                    title="Next move"
+                    onClick={() => handleStep(Math.min(totalSteps, stepIndex + 1))}
+                    title="Next move [Right Arrow]"
                   >
-                    <StepForwardIcon size={16} />
+                    <StepForwardIcon size={15} />
                   </button>
-
                   <button
                     type="button"
                     className="transport-btn"
                     disabled={stepIndex >= totalSteps}
-                    onClick={() => {
-                      onTogglePlay(false);
-                      onStepChange(totalSteps);
-                    }}
-                    title="Jump to end"
+                    onClick={() => handleStep(totalSteps)}
+                    title="Jump to end [End]"
                   >
-                    <SkipForwardIcon size={16} />
+                    <SkipForwardIcon size={15} />
                   </button>
                 </div>
 
-                <div className="speed-pills">
-                  {SPEED_PRESETS.map((preset) => (
+                <div className="speed-segmented">
+                  {SPEED_PRESETS.map((p) => (
                     <button
-                      key={preset.label}
+                      key={p.label}
                       type="button"
-                      className={`speed-pill ${speedMs === preset.ms ? 'active' : ''}`}
-                      onClick={() => onChangeSpeed(preset.ms)}
+                      className={`speed-btn ${speedMs === p.ms ? 'active' : ''}`}
+                      onClick={() => onChangeSpeed(p.ms)}
                     >
-                      {preset.label}
+                      {p.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Horizontal Scrollable Move Ribbon */}
-              <div className="move-ribbon" ref={ribbonRef}>
+              {/* Move Tape Ribbon */}
+              <div className="move-tape" ref={ribbonRef}>
                 {moves.map((move, idx) => {
                   const isPast = idx < stepIndex;
                   const isCurrent = idx === stepIndex;
@@ -254,15 +253,12 @@ export default function SolutionPlayback({
                     <button
                       key={`${move}-${idx}`}
                       type="button"
-                      className={`move-chip ${isCurrent ? 'current' : ''} ${isPast ? 'past' : ''}`}
-                      onClick={() => {
-                        onTogglePlay(false);
-                        onStepChange(idx);
-                      }}
+                      className={`tape-chip mono ${isCurrent ? 'current' : ''} ${isPast ? 'past' : ''}`}
+                      onClick={() => handleStep(idx)}
                       title={`Jump to step ${idx + 1}: ${move}`}
                     >
-                      <span className="move-chip-index">{idx + 1}</span>
-                      <span className="move-chip-name">{move}</span>
+                      <span className="chip-idx">{idx + 1}</span>
+                      <span className="chip-code">{move}</span>
                     </button>
                   );
                 })}
