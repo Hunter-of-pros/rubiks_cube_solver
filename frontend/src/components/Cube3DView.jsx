@@ -27,7 +27,7 @@ const CSS_FACES = [
   { code: 'D', offset: 27, transform: `rotateX(-90deg) translateZ(${HALF_SIZE}px)`, light: 0.74 },
 ];
 
-export default function Cube3DView({ facelets, activeMove = '' }) {
+export default function Cube3DView({ facelets, activeMove = '', onApplyMove = null }) {
   const [hasWebGL, setHasWebGL] = useState(true);
 
   useEffect(() => {
@@ -35,7 +35,13 @@ export default function Cube3DView({ facelets, activeMove = '' }) {
   }, []);
 
   if (hasWebGL) {
-    return <Cube3DWebGL facelets={facelets} activeMove={activeMove} />;
+    return (
+      <Cube3DWebGL
+        facelets={facelets}
+        activeMove={activeMove}
+        onApplyMove={onApplyMove}
+      />
+    );
   }
 
   // Fallback CSS 3D representation

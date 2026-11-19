@@ -20,7 +20,7 @@ import {
   solveCubeState,
   validateCubeState,
 } from './services/api';
-import { SOLVED_FACELETS, buildPlaybackStates } from './utils/cube';
+import { SOLVED_FACELETS, applyMove, buildPlaybackStates } from './utils/cube';
 import { playCubeClick, playSolvedChime } from './utils/audio';
 
 export default function App() {
@@ -133,6 +133,18 @@ export default function App() {
     playCubeClick(soundMuted);
   }, [clearSolution, runValidation, soundMuted]);
 
+  const handleApplyMove = useCallback((moveToken) => {
+    clearSolution();
+    playCubeClick(soundMuted);
+    try {
+      const nextState = applyMove(facelets, moveToken);
+      setFacelets(nextState);
+      runValidation(nextState);
+    } catch {
+      // Ignore invalid move
+    }
+  }, [facelets, clearSolution, soundMuted, runValidation]);
+
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -140,6 +152,21 @@ export default function App() {
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
       const movesCount = solveResult?.move_list?.length || 0;
+
+      // Direct Face Turn keys: U, L, F, R, B, D
+      const keyLower = e.key.toLowerCase();
+      if (
+        ['u', 'l', 'f', 'r', 'b', 'd'].includes(keyLower) &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        const face = keyLower.toUpperCase();
+        const moveToken = e.shiftKey ? `${face}'` : face;
+        handleApplyMove(moveToken);
+        return;
+      }
 
       if (e.code === 'Space') {
         e.preventDefault();
@@ -172,7 +199,7 @@ export default function App() {
       } else if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
         handleScramble();
-      } else if (e.key === 'r' || e.key === 'R') {
+      } else if (e.key === 'Escape') {
         e.preventDefault();
         handleReset();
       } else if (e.key === 'm' || e.key === 'M') {
@@ -189,7 +216,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [solveResult, stepIndex, handleScramble, handleReset, soundMuted]);
+  }, [solveResult, stepIndex, handleScramble, handleReset, handleApplyMove, soundMuted]);
 
   const isOnline = health?.status === 'ok';
 
@@ -295,7 +322,11 @@ export default function App() {
         {activeTab === 'solve' && (
           <div className="stage-layout">
             <div className="stage-viewport">
-              <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
+              <Cube3DView
+                facelets={displayedFacelets}
+                activeMove={activeMove}
+                onApplyMove={handleApplyMove}
+              />
             </div>
 
             <div className="stage-dock">
@@ -333,7 +364,11 @@ export default function App() {
             <div className="workspace-column side-col">
               <div className="live-preview-box">
                 <div className="live-preview-label">Live 3D View</div>
-                <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
+                <Cube3DView
+                  facelets={displayedFacelets}
+                  activeMove={activeMove}
+                  onApplyMove={handleApplyMove}
+                />
               </div>
               <div className="side-solve-action">
                 <button
@@ -361,7 +396,11 @@ export default function App() {
             <div className="workspace-column side-col">
               <div className="live-preview-box">
                 <div className="live-preview-label">Live 3D View</div>
-                <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
+                <Cube3DView
+                  facelets={displayedFacelets}
+                  activeMove={activeMove}
+                  onApplyMove={handleApplyMove}
+                />
               </div>
             </div>
           </div>
@@ -388,6 +427,14 @@ export default function App() {
 
         <div className="footer-shortcuts">
           <span className="shortcut-item">
+            <kbd className="key">U</kbd>
+            <kbd className="key">R</kbd>
+            <kbd className="key">F</kbd>
+            <kbd className="key">D</kbd>
+            <kbd className="key">L</kbd>
+            <kbd className="key">B</kbd> Rotate (+Shift for &apos;)
+          </span>
+          <span className="shortcut-item">
             <kbd className="key">Space</kbd> Play/Pause
           </span>
           <span className="shortcut-item">
@@ -397,7 +444,7 @@ export default function App() {
             <kbd className="key">S</kbd> Scramble
           </span>
           <span className="shortcut-item">
-            <kbd className="key">R</kbd> Reset
+            <kbd className="key">Esc</kbd> Reset
           </span>
         </div>
       </footer>
