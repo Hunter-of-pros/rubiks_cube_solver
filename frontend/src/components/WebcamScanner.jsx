@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { scanFaceBlob } from '../services/api';
 import { COLORS, FACES, SCAN_PROMPTS } from '../utils/cube';
+import {
+  AlertCircleIcon,
+  CameraIcon,
+  CheckCircleIcon,
+  StepBackIcon,
+  StepForwardIcon,
+} from './Icons';
 
 const CYCLE_COLORS = ['W', 'R', 'G', 'Y', 'O', 'B'];
 
@@ -44,7 +51,7 @@ export default function WebcamScanner({ onApplyScannedCube }) {
       }
       setCameraActive(true);
     } catch (err) {
-      setCameraError(err.message || 'Could not access webcam');
+      setCameraError(err.message || 'Could not access camera. Check browser permissions.');
     }
   };
 
@@ -79,7 +86,7 @@ export default function WebcamScanner({ onApplyScannedCube }) {
         }
       }
     } catch (err) {
-      setCameraError(err.message || 'Scan request failed');
+      setCameraError(err.message || 'Scan processing failed.');
     } finally {
       setBusy(false);
     }
@@ -112,157 +119,204 @@ export default function WebcamScanner({ onApplyScannedCube }) {
   };
 
   return (
-    <div className="panel">
-      <div className="panel-header">
-        <h2>Webcam Scanner</h2>
-        <div className="controls-row">
-          <label className="checkbox-label">
+    <div className="card scanner-card">
+      <div className="card-header">
+        <div className="header-meta">
+          <span className="card-tag">Computer Vision</span>
+          <h2 className="card-title">Webcam Scanner</h2>
+        </div>
+        <div className="scanner-header-actions">
+          <label className="toggle-label" title="Enable calibrated k-NN classifier">
             <input
               type="checkbox"
               checked={useMl}
               onChange={(e) => setUseMl(e.target.checked)}
             />
-            Use ML model
+            <span>ML Recognition</span>
           </label>
+
           {!cameraActive ? (
-            <button type="button" className="btn-primary" onClick={startCamera}>
-              Start Camera
+            <button type="button" className="btn-accent" onClick={startCamera}>
+              <CameraIcon size={16} />
+              <span>Start Camera</span>
             </button>
           ) : (
-            <button type="button" className="btn-ghost" onClick={stopCamera}>
+            <button type="button" className="btn-secondary" onClick={stopCamera}>
               Stop Camera
             </button>
           )}
         </div>
       </div>
 
-      {cameraError && <div className="alert alert-error">{cameraError}</div>}
-
-      <div className="scanner-prompt">
-        <div className="prompt-title">
-          Step {promptIndex + 1}/6 — <strong>{activePrompt.label}</strong>
+      {cameraError && (
+        <div className="status-banner error">
+          <AlertCircleIcon size={18} />
+          <span>{cameraError}</span>
         </div>
-        <div className="muted">{activePrompt.hint}</div>
+      )}
+
+      {/* Guide Prompt Strip */}
+      <div className="scanner-instruction-strip">
+        <div className="instruction-step-pill">
+          Face {promptIndex + 1} of 6: <strong>{activePrompt.label}</strong>
+        </div>
+        <p className="instruction-hint">{activePrompt.hint}</p>
       </div>
 
-      <div className="video-wrapper">
-        <video ref={videoRef} autoPlay playsInline muted className="video-mirrored" />
+      {/* Camera Viewfinder Viewport */}
+      <div className="viewfinder-container">
+        <video ref={videoRef} autoPlay playsInline muted className="viewfinder-video" />
         <canvas ref={canvasRef} hidden />
 
-        <div className="guide-overlay" aria-hidden="true">
-          <div
-            className="neighbor-bar neighbor-top"
-            style={{ backgroundColor: COLORS[activePrompt.top].hex }}
-          />
-          <div
-            className="neighbor-bar neighbor-bottom"
-            style={{ backgroundColor: COLORS[activePrompt.bottom].hex }}
-          />
-          <div
-            className="neighbor-bar neighbor-left"
-            style={{ backgroundColor: COLORS[activePrompt.userLeft].hex }}
-          />
-          <div
-            className="neighbor-bar neighbor-right"
-            style={{ backgroundColor: COLORS[activePrompt.userRight].hex }}
-          />
-          <div className="guide-grid">
-            {Array.from({ length: 9 }, (_, i) => {
-              // Mirrored preview flips col 0 <-> 2 visually to match user's hands.
-              const rawIdx = Math.floor(i / 3) * 3 + (2 - (i % 3));
-              const code = liveDetection?.colors?.[rawIdx];
-              const conf = liveDetection?.confidences?.[rawIdx];
-              const lowConf = conf !== undefined && conf < 0.55;
-              return (
-                <div key={i} className={`guide-cell ${lowConf ? 'low-conf' : ''}`}>
-                  {code && (
-                    <span
-                      className="live-badge"
-                      style={{
-                        backgroundColor: COLORS[code].hex,
-                        color: COLORS[code].text,
-                      }}
-                    >
-                      {code}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+        {!cameraActive && (
+          <div className="viewfinder-placeholder">
+            <CameraIcon size={48} className="placeholder-icon" />
+            <p className="placeholder-title">Camera Inactive</p>
+            <p className="placeholder-desc">
+              Click Start Camera to align each cube face inside the targeting frame.
+            </p>
           </div>
-        </div>
+        )}
+
+        {cameraActive && (
+          <div className="viewfinder-reticle" aria-hidden="true">
+            {/* Color-coded orientation neighbor bars */}
+            <div
+              className="neighbor-guide-bar neighbor-top"
+              style={{ backgroundColor: COLORS[activePrompt.top].hex }}
+              title={`Top neighbor: ${COLORS[activePrompt.top].name}`}
+            />
+            <div
+              className="neighbor-guide-bar neighbor-bottom"
+              style={{ backgroundColor: COLORS[activePrompt.bottom].hex }}
+              title={`Bottom neighbor: ${COLORS[activePrompt.bottom].name}`}
+            />
+            <div
+              className="neighbor-guide-bar neighbor-left"
+              style={{ backgroundColor: COLORS[activePrompt.userLeft].hex }}
+              title={`Left neighbor: ${COLORS[activePrompt.userLeft].name}`}
+            />
+            <div
+              className="neighbor-guide-bar neighbor-right"
+              style={{ backgroundColor: COLORS[activePrompt.userRight].hex }}
+              title={`Right neighbor: ${COLORS[activePrompt.userRight].name}`}
+            />
+
+            {/* 3x3 Grid Overlay */}
+            <div className="reticle-grid">
+              {Array.from({ length: 9 }, (_, i) => {
+                // Mirrored preview flips columns horizontally
+                const rawIdx = Math.floor(i / 3) * 3 + (2 - (i % 3));
+                const code = liveDetection?.colors?.[rawIdx];
+                const conf = liveDetection?.confidences?.[rawIdx];
+                const lowConf = conf !== undefined && conf < 0.6;
+
+                return (
+                  <div
+                    key={i}
+                    className={`reticle-cell ${lowConf ? 'low-confidence' : ''}`}
+                  >
+                    {code && (
+                      <span
+                        className="detected-badge"
+                        style={{
+                          backgroundColor: COLORS[code].hex,
+                          color: COLORS[code].text,
+                        }}
+                      >
+                        {code}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="controls-row wrap">
+      {/* Scanner Controls Toolbar */}
+      <div className="scanner-action-toolbar">
         <button
           type="button"
-          className="btn-primary"
+          className="btn-accent"
           disabled={!cameraActive || busy}
           onClick={() => captureFrameAndDetect(true)}
         >
-          Capture {activePrompt.code} Face
+          <span>{busy ? 'Scanning...' : `Capture ${activePrompt.code} Face`}</span>
         </button>
+
         <button
           type="button"
-          className="btn-ghost"
+          className={`btn-secondary ${autoScan ? 'active' : ''}`}
           disabled={!cameraActive}
           onClick={() => setAutoScan((v) => !v)}
         >
           {autoScan ? 'Pause Live Preview' : 'Live Preview'}
         </button>
-        <button
-          type="button"
-          className="btn-ghost"
-          disabled={promptIndex === 0}
-          onClick={() => setPromptIndex((i) => Math.max(0, i - 1))}
-        >
-          Prev Face
-        </button>
-        <button
-          type="button"
-          className="btn-ghost"
-          disabled={promptIndex === SCAN_PROMPTS.length - 1}
-          onClick={() => setPromptIndex((i) => Math.min(SCAN_PROMPTS.length - 1, i + 1))}
-        >
-          Next Face
-        </button>
-      </div>
 
-      {liveDetection && (
-        <div className="muted small-note">
-          Classifier: <code>{liveDetection.classifier_used}</code> | Min confidence:{' '}
-          {(liveDetection.min_confidence * 100).toFixed(0)}%
-        </div>
-      )}
-
-      <div className="scanned-summary">
-        <div className="panel-header">
-          <span>Captured Faces ({scannedCount}/6) — click any sticker to adjust</span>
+        <div className="step-nav-buttons">
           <button
             type="button"
-            className="btn-primary"
+            className="btn-secondary icon-only"
+            disabled={promptIndex === 0}
+            onClick={() => setPromptIndex((i) => Math.max(0, i - 1))}
+            title="Previous face"
+          >
+            <StepBackIcon size={16} />
+          </button>
+          <button
+            type="button"
+            className="btn-secondary icon-only"
+            disabled={promptIndex === SCAN_PROMPTS.length - 1}
+            onClick={() => setPromptIndex((i) => Math.min(SCAN_PROMPTS.length - 1, i + 1))}
+            title="Next face"
+          >
+            <StepForwardIcon size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Captured Faces Filmstrip */}
+      <div className="filmstrip-section">
+        <div className="filmstrip-header">
+          <span className="filmstrip-title">
+            Captured Faces ({scannedCount}/6)
+          </span>
+          <button
+            type="button"
+            className="btn-accent small"
             disabled={scannedCount < 6}
             onClick={applyAllFacesToCube}
           >
-            Load Into Cube
+            <CheckCircleIcon size={14} />
+            <span>Load Into Cube</span>
           </button>
         </div>
-        <div className="scanned-faces-row">
+
+        <div className="filmstrip-grid">
           {SCAN_PROMPTS.map((p, idx) => {
             const cols = scannedFaces[p.code];
+            const isCurrent = idx === promptIndex;
             return (
               <div
                 key={p.code}
-                className={`mini-face ${idx === promptIndex ? 'mini-face-active' : ''}`}
+                className={`filmstrip-tile ${isCurrent ? 'active' : ''} ${cols ? 'captured' : ''}`}
               >
                 <button
                   type="button"
-                  className="mini-face-title"
+                  className="filmstrip-tile-header"
                   onClick={() => setPromptIndex(idx)}
                 >
-                  {p.code} {cols ? '✓' : ''}
+                  <span className="filmstrip-code">{p.code}</span>
+                  {cols ? (
+                    <span className="check-badge">✓</span>
+                  ) : (
+                    <span className="empty-badge">Empty</span>
+                  )}
                 </button>
-                <div className="mini-grid">
+
+                <div className="filmstrip-thumb">
                   {Array.from({ length: 9 }, (_, sIdx) => {
                     const c = cols ? cols[sIdx] : null;
                     return (
@@ -270,13 +324,13 @@ export default function WebcamScanner({ onApplyScannedCube }) {
                         key={sIdx}
                         type="button"
                         disabled={!cols}
-                        className="mini-cell"
+                        className="thumb-sticker"
                         style={{
-                          backgroundColor: c ? COLORS[c].hex : '#1e293b',
+                          backgroundColor: c ? COLORS[c].hex : '#181c27',
                           color: c ? COLORS[c].text : '#64748b',
                         }}
                         onClick={() => cycleScannedSticker(p.code, sIdx)}
-                        title={cols ? 'Click to cycle color' : 'Not captured yet'}
+                        title={cols ? 'Click to cycle color' : 'Uncaptured'}
                       >
                         {c || ''}
                       </button>
