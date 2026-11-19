@@ -4,13 +4,25 @@ export const SOLVED_FACELETS =
 export const FACES = ['U', 'R', 'F', 'D', 'L', 'B'];
 
 export const COLORS = {
-  W: { name: 'White', hex: '#f8fafc', text: '#0f172a' },
-  R: { name: 'Red', hex: '#dc2626', text: '#ffffff' },
-  G: { name: 'Green', hex: '#16a34a', text: '#ffffff' },
-  Y: { name: 'Yellow', hex: '#facc15', text: '#0f172a' },
-  O: { name: 'Orange', hex: '#f97316', text: '#0f172a' },
-  B: { name: 'Blue', hex: '#2563eb', text: '#ffffff' },
+  W: { name: 'White', hex: '#FFFFFF', text: '#0F172A', border: '#E2E8F0', glow: 'rgba(255,255,255,0.4)' },
+  R: { name: 'Red', hex: '#DC2626', text: '#FFFFFF', border: '#991B1B', glow: 'rgba(220,38,38,0.45)' },
+  G: { name: 'Green', hex: '#00A859', text: '#FFFFFF', border: '#065F46', glow: 'rgba(0,168,89,0.45)' },
+  Y: { name: 'Yellow', hex: '#FFD500', text: '#0F172A', border: '#CA8A04', glow: 'rgba(255,213,0,0.45)' },
+  O: { name: 'Orange', hex: '#FF5A00', text: '#FFFFFF', border: '#C2410C', glow: 'rgba(255,90,0,0.45)' },
+  B: { name: 'Blue', hex: '#0055FF', text: '#FFFFFF', border: '#1E40AF', glow: 'rgba(0,85,255,0.45)' },
 };
+
+export function getStickerCounts(facelets) {
+  const counts = { W: 0, R: 0, G: 0, Y: 0, O: 0, B: 0 };
+  if (!facelets) return counts;
+  for (let i = 0; i < facelets.length; i += 1) {
+    const c = facelets[i];
+    if (c in counts) {
+      counts[c] += 1;
+    }
+  }
+  return counts;
+}
 
 // Natural hand-turn order with neighbor colors from the user's mirrored-preview view.
 export const SCAN_PROMPTS = [

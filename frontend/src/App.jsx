@@ -4,6 +4,15 @@ import CubeNetEditor from './components/CubeNetEditor';
 import SolutionPlayback from './components/SolutionPlayback';
 import WebcamScanner from './components/WebcamScanner';
 import {
+  AlertCircleIcon,
+  CameraIcon,
+  CheckCircleIcon,
+  CubeIcon,
+  PaletteIcon,
+  RotateCcwIcon,
+  ShuffleIcon,
+} from './components/Icons';
+import {
   fetchHealth,
   fetchRandomScramble,
   solveCubeState,
@@ -12,7 +21,7 @@ import {
 import { SOLVED_FACELETS, buildPlaybackStates } from './utils/cube';
 
 export default function App() {
-  const [inputMode, setInputMode] = useState('manual');
+  const [activeTab, setActiveTab] = useState('solve'); // 'solve' | 'net' | 'camera'
   const [facelets, setFacelets] = useState(SOLVED_FACELETS);
   const [activeColor, setActiveColor] = useState('W');
   const [health, setHealth] = useState(null);
@@ -22,7 +31,7 @@ export default function App() {
   const [solveResult, setSolveResult] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speedMs, setSpeedMs] = useState(700);
+  const [speedMs, setSpeedMs] = useState(750);
   const [apiError, setApiError] = useState('');
 
   useEffect(() => {
@@ -109,100 +118,225 @@ export default function App() {
   const handleApplyScanned = (scannedFacelets) => {
     clearSolution();
     setFacelets(scannedFacelets);
-    setInputMode('manual');
+    setActiveTab('solve');
     runValidation(scannedFacelets);
   };
 
+  const isOnline = health?.status === 'ok';
+
   return (
-    <div className="app-shell">
-      <header className="top-bar">
-        <div>
-          <h1>Rubik&apos;s Cube Solver</h1>
-          <p className="muted">C++ Search Engine • OpenCV + ML Vision • FastAPI + React</p>
+    <div className="app-container">
+      {/* Studio Header */}
+      <header className="navbar">
+        <div className="brand-group">
+          <div className="brand-icon-wrap">
+            <CubeIcon size={22} className="brand-icon" />
+          </div>
+          <div>
+            <div className="brand-title">RUBIK STUDIO</div>
+            <div className="brand-subtitle">C++ Kociemba Two-Phase &bull; Computer Vision</div>
+          </div>
         </div>
-        <div className="status-pills">
-          <span className={`pill ${health?.status === 'ok' ? 'pill-ok' : 'pill-warn'}`}>
-            API: {health?.status === 'ok' ? 'Connected' : 'Start FastAPI on :8000'}
-          </span>
+
+        <div className="navbar-status">
+          <div className={`status-pill ${isOnline ? 'online' : 'offline'}`}>
+            <span className="status-dot" />
+            <span className="status-text">
+              {isOnline ? 'C++ Solver Connected' : 'Backend Offline'}
+            </span>
+          </div>
+
           {health?.ml_model_loaded && (
-            <span className="pill pill-ok">ML: {health.ml_model_name}</span>
+            <div className="status-pill ml-pill">
+              <span className="ml-dot" />
+              <span className="status-text">ML Model: {health.ml_model_name.toUpperCase()}</span>
+            </div>
           )}
         </div>
       </header>
 
-      {apiError && <div className="alert alert-error">{apiError}</div>}
+      {/* Global API Error Toast */}
+      {apiError && (
+        <div className="global-alert-toast" role="alert">
+          <AlertCircleIcon size={18} />
+          <span>{apiError}</span>
+          <button type="button" className="close-btn" onClick={() => setApiError('')}>
+            &times;
+          </button>
+        </div>
+      )}
 
-      <div className="toolbar">
-        <div className="tabs">
+      {/* Main Studio Controls Strip */}
+      <div className="studio-toolbar">
+        {/* View Mode Segmented Switcher */}
+        <div className="segmented-switch" role="tablist">
           <button
             type="button"
-            className={`tab-btn ${inputMode === 'manual' ? 'active' : ''}`}
-            onClick={() => setInputMode('manual')}
+            role="tab"
+            aria-selected={activeTab === 'solve'}
+            className={`segment-btn ${activeTab === 'solve' ? 'active' : ''}`}
+            onClick={() => setActiveTab('solve')}
           >
-            Manual Editor
+            <CubeIcon size={15} />
+            <span>3D Studio</span>
           </button>
           <button
             type="button"
-            className={`tab-btn ${inputMode === 'webcam' ? 'active' : ''}`}
-            onClick={() => setInputMode('webcam')}
+            role="tab"
+            aria-selected={activeTab === 'net'}
+            className={`segment-btn ${activeTab === 'net' ? 'active' : ''}`}
+            onClick={() => setActiveTab('net')}
           >
-            Webcam Scanner
+            <PaletteIcon size={15} />
+            <span>2D Net Painter</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'camera'}
+            className={`segment-btn ${activeTab === 'camera' ? 'active' : ''}`}
+            onClick={() => setActiveTab('camera')}
+          >
+            <CameraIcon size={15} />
+            <span>Webcam Scanner</span>
           </button>
         </div>
 
-        <div className="controls-row">
-          <button type="button" className="btn-ghost" onClick={handleScramble}>
-            Random Scramble
+        {/* Global Cube State Actions */}
+        <div className="action-button-group">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleScramble}
+            title="Generate random 20-move scramble"
+          >
+            <ShuffleIcon size={15} />
+            <span>Random Scramble</span>
           </button>
-          <button type="button" className="btn-ghost" onClick={handleReset}>
-            Reset Solved
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => runValidation(facelets)}>
-            Validate
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleReset}
+            title="Reset cube to solved identity state"
+          >
+            <RotateCcwIcon size={15} />
+            <span>Reset Solved</span>
           </button>
         </div>
       </div>
 
-      <div className={`validation-banner ${validation.valid ? 'valid' : 'invalid'}`}>
-        {validation.valid
-          ? validation.solved
-            ? 'Cube state is valid and already solved.'
-            : 'Cube state is physically valid and ready to solve.'
-          : `Invalid cube state: ${validation.error}`}
-      </div>
-
-      <main className="workspace-grid">
-        <section className="left-col">
-          {inputMode === 'manual' ? (
-            <CubeNetEditor
-              facelets={displayedFacelets}
-              activeColor={activeColor}
-              onSelectColor={setActiveColor}
-              onPaintSticker={handlePaintSticker}
-              readOnly={Boolean(solveResult?.solved)}
-              highlightFace={activeMove ? activeMove[0] : null}
-            />
+      {/* Physical State Validation Indicator */}
+      <div
+        className={`validation-status-bar ${
+          validation.valid
+            ? validation.solved
+              ? 'solved'
+              : 'ready'
+            : 'invalid'
+        }`}
+      >
+        <div className="validation-status-content">
+          {validation.valid ? (
+            <CheckCircleIcon size={16} />
           ) : (
-            <WebcamScanner onApplyScannedCube={handleApplyScanned} />
+            <AlertCircleIcon size={16} />
           )}
-        </section>
+          <span className="validation-text">
+            {validation.valid
+              ? validation.solved
+                ? 'Cube state is physically valid and solved.'
+                : 'Cube state is physically valid and ready to solve.'
+              : `Physical invariant violation: ${validation.error}`}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="revalidate-link"
+          onClick={() => runValidation(facelets)}
+        >
+          Check Invariants
+        </button>
+      </div>
 
-        <section className="right-col">
-          <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
-          <SolutionPlayback
-            algorithm={algorithm}
-            onChangeAlgorithm={setAlgorithm}
-            onSolve={handleSolve}
-            solving={solving}
-            solveResult={solveResult}
-            stepIndex={stepIndex}
-            onStepChange={setStepIndex}
-            isPlaying={isPlaying}
-            onTogglePlay={setIsPlaying}
-            speedMs={speedMs}
-            onChangeSpeed={setSpeedMs}
-          />
-        </section>
+      {/* Dynamic Studio Workspace Layout */}
+      <main className="studio-workspace">
+        {activeTab === 'solve' && (
+          <div className="workspace-duo">
+            <section className="viewport-panel">
+              <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
+            </section>
+            <section className="controls-panel">
+              <SolutionPlayback
+                algorithm={algorithm}
+                onChangeAlgorithm={setAlgorithm}
+                onSolve={handleSolve}
+                solving={solving}
+                solveResult={solveResult}
+                stepIndex={stepIndex}
+                onStepChange={setStepIndex}
+                isPlaying={isPlaying}
+                onTogglePlay={setIsPlaying}
+                speedMs={speedMs}
+                onChangeSpeed={setSpeedMs}
+              />
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'net' && (
+          <div className="workspace-duo">
+            <section className="viewport-panel">
+              <CubeNetEditor
+                facelets={displayedFacelets}
+                activeColor={activeColor}
+                onSelectColor={setActiveColor}
+                onPaintSticker={handlePaintSticker}
+                readOnly={Boolean(solveResult?.solved)}
+                highlightFace={activeMove ? activeMove[0] : null}
+              />
+            </section>
+            <section className="controls-panel">
+              <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
+              <SolutionPlayback
+                algorithm={algorithm}
+                onChangeAlgorithm={setAlgorithm}
+                onSolve={handleSolve}
+                solving={solving}
+                solveResult={solveResult}
+                stepIndex={stepIndex}
+                onStepChange={setStepIndex}
+                isPlaying={isPlaying}
+                onTogglePlay={setIsPlaying}
+                speedMs={speedMs}
+                onChangeSpeed={setSpeedMs}
+              />
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'camera' && (
+          <div className="workspace-duo">
+            <section className="viewport-panel">
+              <WebcamScanner onApplyScannedCube={handleApplyScanned} />
+            </section>
+            <section className="controls-panel">
+              <Cube3DView facelets={displayedFacelets} activeMove={activeMove} />
+              <SolutionPlayback
+                algorithm={algorithm}
+                onChangeAlgorithm={setAlgorithm}
+                onSolve={handleSolve}
+                solving={solving}
+                solveResult={solveResult}
+                stepIndex={stepIndex}
+                onStepChange={setStepIndex}
+                isPlaying={isPlaying}
+                onTogglePlay={setIsPlaying}
+                speedMs={speedMs}
+                onChangeSpeed={setSpeedMs}
+              />
+            </section>
+          </div>
+        )}
       </main>
     </div>
   );
