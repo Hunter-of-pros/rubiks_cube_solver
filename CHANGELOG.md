@@ -5,6 +5,9 @@ All notable progress in `rubiks_cube_solver` is tracked here as milestones are c
 ## [Unreleased]
 
 ### Added
+- Vercel production deployment configuration (`vercel.json`, `.vercelignore`) deployed live at `https://rubikscube-beta.vercel.app`.
+- Client-side Kociemba Two-Phase solver engine (`cubejs`), non-redundant scramble generator (`generateRandomScrambleMoves`), and client validator in `frontend/src/utils/cube.js` and `api.js` for zero-latency edge solving and full offline resiliency.
+- Client-side canvas webcam sticker color classifier with physical $G/R$ ratio discrimination as a resilient fallback when remote backend is offline.
 - Enhanced Orange vs. Red color recognition with 21-D feature vectors ($G/R$ ratio, $(R-G)/(R+G)$, CIE LAB $L^*$ luminance, normalized $rgb$ chromaticity) and multi-brand physical 3×3 cube profiles (GAN/MoYu frosted, Rubik's vinyl, QiYi matte, DaYan vibrant, worn cube) across 7 lighting regimes, achieving 100.00% accuracy on 700 Red/Orange test samples.
 - Fixed center piece locking in webcam scanner (`WebcamScanner.jsx`) and exported `CANONICAL_FACE_CENTERS` to enforce the physical 3×3 core invariant (`U: W, R: R, F: G, D: Y, L: O, B: B`).
 - Phase 7 Research & Benchmarking visualization tool (`backend/scripts/plot_solver_benchmarks.py`) and publication-grade plots (`solver_runtime_vs_depth.png`, `solver_nodes_vs_depth.png`, `solver_moves_vs_depth.png`, `solver_summary_dashboard.png`) documenting empirical performance across IDA* baseline, IDA* with Pattern Databases, and Kociemba Two-Phase algorithms.

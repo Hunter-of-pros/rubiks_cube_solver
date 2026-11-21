@@ -6,6 +6,9 @@ import {
   applyMove,
   applyMoves,
   buildPlaybackStates,
+  generateRandomScrambleMoves,
+  solveCubeClient,
+  validateFaceletsClient,
 } from './cube';
 
 describe('client-side cube rotation helpers', () => {
@@ -54,5 +57,25 @@ describe('client-side cube rotation helpers', () => {
       L: 'O',
       B: 'B',
     });
+  });
+
+  it('generates non-redundant random scramble moves and validates solved state', () => {
+    const scramble = generateRandomScrambleMoves(20);
+    expect(scramble.split(' ')).toHaveLength(20);
+
+    const scrambledState = applyMoves(SOLVED_FACELETS, scramble);
+    const validRes = validateFaceletsClient(scrambledState);
+    expect(validRes.valid).toBe(true);
+    expect(validRes.solved).toBe(false);
+
+    // Solves the scrambled state client-side with Kociemba algorithm
+    const solutionRes = solveCubeClient(scrambledState);
+    expect(solutionRes.valid).toBe(true);
+    expect(solutionRes.solved).toBe(true);
+    expect(solutionRes.move_list.length).toBeGreaterThan(0);
+
+    // Applying solution moves must return exactly to solved facelets
+    const restored = applyMoves(scrambledState, solutionRes.moves);
+    expect(restored).toBe(SOLVED_FACELETS);
   });
 });

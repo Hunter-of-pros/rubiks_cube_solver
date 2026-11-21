@@ -1,3 +1,14 @@
+import Cube from 'cubejs';
+
+let solverInitialized = false;
+
+export function ensureSolverInitialized() {
+  if (!solverInitialized) {
+    Cube.initSolver();
+    solverInitialized = true;
+  }
+}
+
 export const SOLVED_FACELETS =
   'WWWWWWWWWRRRRRRRRRGGGGGGGGGYYYYYYYYYOOOOOOOOOBBBBBBBBB';
 
@@ -212,3 +223,147 @@ export function describeMove(moveToken) {
   if (suffix === "'") return `Turn ${name} 90° counterclockwise (looking at that face)`;
   return `Turn ${name} 90° clockwise (looking at that face)`;
 }
+
+const AXIS_MAP = {
+  U: 0,
+  D: 0,
+  L: 1,
+  R: 1,
+  F: 2,
+  B: 2,
+};
+
+const MOVE_TURNS = ['', '2', "'"];
+
+export function generateRandomScrambleMoves(length = 20) {
+  if (length <= 0) return '';
+  const faces = ['U', 'R', 'F', 'D', 'L', 'B'];
+  const moves = [];
+  let prevFace = -1;
+  let prevAxis = -1;
+
+  for (let i = 0; i < length; i += 1) {
+    let fIdx;
+    let face;
+    let axis;
+    do {
+      fIdx = Math.floor(Math.random() * faces.length);
+      face = faces[fIdx];
+      axis = AXIS_MAP[face];
+    } while (fIdx === prevFace || (axis === prevAxis && fIdx <= prevFace));
+
+    const turn = MOVE_TURNS[Math.floor(Math.random() * MOVE_TURNS.length)];
+    moves.push(`${face}${turn}`);
+    prevFace = fIdx;
+    prevAxis = axis;
+  }
+
+  return moves.join(' ');
+}
+
+export function validateFaceletsClient(facelets) {
+  if (!facelets || facelets.length !== 54) {
+    return { valid: false, solved: false, error: 'Expected 54 sticker colors' };
+  }
+  const counts = getStickerCounts(facelets);
+  for (const [col, count] of Object.entries(counts)) {
+    if (count !== 9) {
+      return {
+        valid: false,
+        solved: false,
+        error: `Color ${col} must appear exactly 9 times (found ${count})`,
+      };
+    }
+  }
+
+  const centerIndices = { U: 4, R: 13, F: 22, D: 31, L: 40, B: 49 };
+  for (const [face, expected] of Object.entries(CANONICAL_FACE_CENTERS)) {
+    const actual = facelets[centerIndices[face]];
+    if (actual !== expected) {
+      return {
+        valid: false,
+        solved: false,
+        error: `Face ${face} center must be ${expected}, got ${actual}`,
+      };
+    }
+  }
+
+  const isSolved = facelets === SOLVED_FACELETS;
+  return { valid: true, solved: isSolved, error: '' };
+}
+
+export function solveCubeClient(facelets) {
+  const validation = validateFaceletsClient(facelets);
+  if (!validation.valid) {
+    return {
+      valid: false,
+      solved: false,
+      facelets,
+      algorithm: 'kociemba-client',
+      moves: '',
+      move_list: [],
+      solution_length: 0,
+      nodes_expanded: 0,
+      elapsed_ms: 0,
+      error: validation.error,
+    };
+  }
+
+  if (validation.solved) {
+    return {
+      valid: true,
+      solved: true,
+      facelets,
+      algorithm: 'kociemba-client',
+      moves: '',
+      move_list: [],
+      solution_length: 0,
+      nodes_expanded: 0,
+      elapsed_ms: 0,
+      error: '',
+    };
+  }
+
+  const start = performance.now();
+  ensureSolverInitialized();
+  const toURFDLB = { W: 'U', R: 'R', G: 'F', Y: 'D', O: 'L', B: 'B' };
+  const urfStr = facelets
+    .split('')
+    .map((c) => toURFDLB[c] || c)
+    .join('');
+
+  try {
+    const cube = Cube.fromString(urfStr);
+    const moves = cube.solve();
+    const elapsed = Math.round((performance.now() - start) * 100) / 100;
+    const moveList = moves.trim().split(/\s+/).filter(Boolean);
+    return {
+      valid: true,
+      solved: true,
+      facelets,
+      algorithm: 'kociemba-client',
+      moves,
+      move_list: moveList,
+      solution_length: moveList.length,
+      nodes_expanded: 0,
+      elapsed_ms: elapsed,
+      error: '',
+    };
+  } catch (err) {
+    return {
+      valid: false,
+      solved: false,
+      facelets,
+      algorithm: 'kociemba-client',
+      moves: '',
+      move_list: [],
+      solution_length: 0,
+      nodes_expanded: 0,
+      elapsed_ms: 0,
+      error:
+        err.message ||
+        'Cube state is unsolvable (twisted corner, flipped edge, or invalid permutation)',
+    };
+  }
+}
+
